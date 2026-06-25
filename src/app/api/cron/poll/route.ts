@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { fetchListings } from "@/lib/boliga";
+import { sendToAll } from "@/lib/push";
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -36,9 +37,17 @@ export async function GET(req: NextRequest) {
     if (insertError) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
-  }
 
-  // TODO fase 2: send push notification for each newListing
+    await Promise.allSettled(
+      newListings.map((l) =>
+        sendToAll({
+          title: "Nyt rækkehus i 5800",
+          body: `${l.address} – ${l.price?.toLocaleString("da-DK")} kr.`,
+          url: l.url,
+        })
+      )
+    );
+  }
 
   return NextResponse.json({
     checked: listings.length,
