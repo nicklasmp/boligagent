@@ -4,9 +4,9 @@ import { getListings, getCounts } from "@/lib/listings";
 import ListingCard from "@/components/ListingCard";
 import BottomNav from "@/components/BottomNav";
 
-export default async function NyePage() {
+export default async function NejTakPage() {
   const [listings, counts] = await Promise.all([
-    getListings("new"),
+    getListings("disliked"),
     getCounts(),
   ]);
 
@@ -15,18 +15,20 @@ export default async function NyePage() {
       <main className="flex-1 pt-14 pb-24 px-4 max-w-xl mx-auto w-full">
         {listings.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center gap-3">
-            <svg width="40" height="40" viewBox="0 0 36 36" fill="none" opacity="0.2">
-              <path d="M5 17L18 5L31 17V32H23V24H13V32H5V17Z" fill="#e8358a" />
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#a0a0a0" strokeWidth="1.5" opacity="0.3">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="15" y1="9" x2="9" y2="15" />
+              <line x1="9" y1="9" x2="15" y2="15" />
             </svg>
             <p className="text-[#a0a0a0] text-sm leading-relaxed max-w-xs">
-              Ingen nye rækkehuse lige nu — du får en notifikation, når et nyt dukker op.
+              Ingen afviste boliger endnu.
             </p>
           </div>
         ) : (
           <ul className="flex flex-col gap-4 py-4">
             {listings.map((l, i) => (
               <li key={l.boliga_id}>
-                <ListingCard listing={l} tab="new" index={i} />
+                <ListingCard listing={l} tab="disliked" index={i} />
               </li>
             ))}
           </ul>

@@ -1,0 +1,88 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type { ListingStatus } from "@/lib/listings";
+
+const TABS = [
+  {
+    href: "/",
+    label: "Nye",
+    status: "new" as ListingStatus,
+    icon: (active: boolean) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill={active ? "#e8358a" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9 22 9 12 15 12 15 22" />
+      </svg>
+    ),
+  },
+  {
+    href: "/ja-tak",
+    label: "Ja tak",
+    status: "liked" as ListingStatus,
+    icon: (active: boolean) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill={active ? "#e8358a" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+      </svg>
+    ),
+  },
+  {
+    href: "/nej-tak",
+    label: "Nej tak",
+    status: "disliked" as ListingStatus,
+    icon: (active: boolean) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" fill={active ? "#3a3a3a" : "none"} />
+        <line x1="15" y1="9" x2="9" y2="15" />
+        <line x1="9" y1="9" x2="15" y2="15" />
+      </svg>
+    ),
+  },
+];
+
+interface Props {
+  counts: Record<ListingStatus, number>;
+}
+
+export default function BottomNav({ counts }: Props) {
+  const pathname = usePathname();
+
+  return (
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-40 bg-[#141414]/95 backdrop-blur-sm border-t border-[#2a2a2a]"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
+      <div className="flex">
+        {TABS.map(({ href, label, status, icon }) => {
+          const active = pathname === href;
+          const count = counts[status];
+          return (
+            <Link
+              key={href}
+              href={href}
+              className="flex-1 flex flex-col items-center gap-1 py-2.5 relative"
+            >
+              <span className={active ? "text-[#e8358a]" : "text-[#a0a0a0]"}>
+                {icon(active)}
+              </span>
+              <span className={`text-[10px] font-medium ${active ? "text-[#e8358a]" : "text-[#a0a0a0]"}`}>
+                {label}
+              </span>
+              {count > 0 && (
+                <span
+                  className="absolute top-1.5 right-[calc(50%-18px)] min-w-[16px] h-4 px-1 rounded-full text-[9px] font-bold flex items-center justify-center"
+                  style={{
+                    background: status === "new" ? "#e8358a" : "#3a3a3a",
+                    color: status === "new" ? "#fff" : "#a0a0a0",
+                  }}
+                >
+                  {count > 99 ? "99+" : count}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
