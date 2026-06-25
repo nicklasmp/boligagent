@@ -1,3 +1,5 @@
+import { chromium } from "playwright";
+
 const ZIP = process.env.BOLIGA_ZIP ?? "5800";
 const PROPERTY_TYPE = process.env.BOLIGA_PROPERTY_TYPE ?? "2";
 
@@ -42,21 +44,8 @@ interface BoligaResponse {
   meta?: { totalCount?: number };
 }
 
-export async function fetchListings(
-  propertyType = PROPERTY_TYPE,
-  zip = ZIP
-): Promise<Listing[]> {
-  const url =
-    `https://api.boliga.dk/api/v2/search/results` +
-    `?propertyType=${propertyType}&zipCodes=${zip}&pageSize=100&page=1&sort=daysForSale-asc`;
-
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) {
-    throw new Error(`Boliga API ${res.status}: ${await res.text()}`);
-  }
-
-  const data: BoligaResponse = await res.json();
-  return (data.results ?? []).map((r) => ({
+function mapResult(r: BoligaResult): Listing {
+  return {
     boliga_id: r.id,
     address: r.street,
     zip: r.zipCode,
@@ -73,5 +62,45 @@ export async function fetchListings(
     boliga_created: r.createdDate ?? null,
     url: `https://www.boliga.dk/bolig/${r.id}`,
     image_url: `https://i.boliga.dk/dia/300/${r.id}.jpg`,
-  }));
+  };
+}
+
+export async function fetchListings(
+  propertyType = PROPERTY_TYPE,
+  zip = ZIP
+): Promise<Listing[]> {
+  const apiUrl =
+    `https://api.boliga.dk/api/v2/search/results` +
+    `?propertyType=${propertyType}&zipCodes=${zip}&pageSize=100&page=1&sort=daysForSale-asc`;
+
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext({
+      userAgent:
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+      locale: "da-DK",
+      extraHTTPHeaders: {
+        Accept: "application/json, text/plain, */*",
+        "Accept-Language": "da-DK,da;q=0.9,en;q=0.8",
+        Referer: "https://www.boliga.dk/",
+      },
+    });
+    const page = await context.newPage();
+
+    const responsePromise = page.waitForResponse(
+      (r) => r.url().startsWith("https://api.boliga.dk/api/v2/search/results"),
+      { timeout: 30000 }
+    );
+    await page.goto(apiUrl, { waitUntil: "commit" });
+    const response = await responsePromise;
+
+    if (!response.ok()) {
+      throw new Error(`Boliga API ${response.status()}`);
+    }
+
+    const data: BoligaResponse = await response.json();
+    return (data.results ?? []).map(mapResult);
+  } finally {
+    await browser.close();
+  }
 }
