@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import TopBar from "@/components/TopBar";
+import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import "./globals.css";
 
 const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full bg-[#141414] text-[#f5f5f5]" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <TopBar />
         {children}
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );

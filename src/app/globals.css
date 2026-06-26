@@ -35,7 +35,17 @@ body {
   animation: card-in 280ms ease both;
 }
 
+.ptr-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(232, 53, 138, 0.2);
+  border-top-color: #e8358a;
+  border-radius: 50%;
+  animation: ptr-spin 0.7s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
 @keyframes ptr-spin {
-  from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }

@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { getListings, getCounts } from "@/lib/listings";
 import ListingCard from "@/components/ListingCard";
 import TabNav from "@/components/TabNav";
-import PullToRefresh from "@/components/PullToRefresh";
+import FeedShell from "@/components/FeedShell";
 
 export default async function NejTakPage() {
   const [listings, counts] = await Promise.all([
@@ -15,7 +15,7 @@ export default async function NejTakPage() {
     <div className="flex flex-col min-h-screen">
       <TabNav counts={counts} />
       <main className="flex-1 pt-[104px] pb-8 px-4 max-w-xl mx-auto w-full">
-        <PullToRefresh>
+        <FeedShell>
           {listings.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-center gap-3">
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#a0a0a0" strokeWidth="1.5" opacity="0.3">
@@ -36,7 +36,7 @@ export default async function NejTakPage() {
               ))}
             </ul>
           )}
-        </PullToRefresh>
+        </FeedShell>
       </main>
     </div>
   );
