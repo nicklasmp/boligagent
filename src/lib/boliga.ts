@@ -1,7 +1,7 @@
 import { chromium } from "playwright";
 
 const ZIP = process.env.BOLIGA_ZIP ?? "5800";
-const PROPERTY_TYPE = process.env.BOLIGA_PROPERTY_TYPE ?? "2";
+const PROPERTY_TYPE = process.env.BOLIGA_PROPERTY_TYPE ?? "3";
 
 export interface Listing {
   boliga_id: number;
