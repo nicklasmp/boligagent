@@ -7,6 +7,25 @@ import NotifySheet from "./NotifySheet";
 export default function TopBar() {
   const router = useRouter();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [newCount, setNewCount] = useState<number | null>(null);
+
+  async function handleRefresh() {
+    if (refreshing) return;
+    setRefreshing(true);
+    setNewCount(null);
+    try {
+      const res = await fetch("/api/refresh", { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setNewCount(data.new ?? 0);
+        router.refresh();
+      }
+    } finally {
+      setRefreshing(false);
+      setTimeout(() => setNewCount(null), 3000);
+    }
+  }
 
   return (
     <>
@@ -17,18 +36,43 @@ export default function TopBar() {
           </svg>
           <h1 className="font-semibold text-[#f5f5f5] text-base tracking-tight">Boligagent</h1>
         </div>
+
         <div className="flex items-center gap-1">
+          {/* Opdater nu */}
           <button
-            onClick={() => router.refresh()}
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-[#a0a0a0] hover:text-[#f5f5f5] active:scale-90 transition"
-            aria-label="Opdater"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-medium transition-all active:scale-95 disabled:opacity-60"
+            style={{
+              background: newCount !== null && newCount > 0 ? "#e8358a" : "#1c1c1c",
+              color: newCount !== null && newCount > 0 ? "#fff" : "#a0a0a0",
+            }}
+            aria-label="Opdater nu"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ animation: refreshing ? "ptr-spin 0.8s linear infinite" : "none" }}
+            >
               <polyline points="23 4 23 10 17 10" />
               <polyline points="1 20 1 14 7 14" />
               <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
             </svg>
+            {newCount !== null
+              ? newCount > 0
+                ? `${newCount} nye`
+                : "Opdateret"
+              : refreshing
+              ? "Henter…"
+              : "Opdater nu"}
           </button>
+
           <button
             onClick={() => setSheetOpen(true)}
             className="w-9 h-9 rounded-xl flex items-center justify-center text-[#a0a0a0] hover:text-[#f5f5f5] active:scale-90 transition"

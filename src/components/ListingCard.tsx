@@ -29,6 +29,12 @@ function formatPrice(p: number | null) {
   return p.toLocaleString("da-DK") + " kr.";
 }
 
+function proxyImageUrl(url: string | null) {
+  if (!url) return null;
+  const m = url.match(/i\.boliga\.dk\/[^/]+\/[^/]+\/(\d+)\.\w+/);
+  return m ? `/api/image/${m[1]}` : url;
+}
+
 function isNew(createdAt: string) {
   return Date.now() - new Date(createdAt).getTime() < 72 * 60 * 60 * 1000;
 }
@@ -43,6 +49,7 @@ export default function ListingCard({ listing, tab, index }: Props) {
   const router = useRouter();
   const [visible, setVisible] = useState(true);
   const [imgError, setImgError] = useState(false);
+  const imageSrc = proxyImageUrl(listing.image_url);
 
   async function act(status: ListingStatus) {
     setVisible(false);
@@ -73,9 +80,9 @@ export default function ListingCard({ listing, tab, index }: Props) {
     >
       {/* Image */}
       <div className="relative w-full h-44 bg-[#232323]">
-        {listing.image_url && !imgError ? (
+        {imageSrc && !imgError ? (
           <Image
-            src={listing.image_url}
+            src={imageSrc}
             alt={listing.address}
             fill
             sizes="(max-width: 640px) 100vw, 640px"
