@@ -29,6 +29,10 @@ function formatPrice(p: number | null) {
   return p.toLocaleString("da-DK") + " kr.";
 }
 
+function isNew(createdAt: string) {
+  return Date.now() - new Date(createdAt).getTime() < 72 * 60 * 60 * 1000;
+}
+
 interface Props {
   listing: ListingRow;
   tab: ListingStatus;
@@ -84,6 +88,11 @@ export default function ListingCard({ listing, tab, index }: Props) {
               <path d="M5 17L18 5L31 17V32H23V24H13V32H5V17Z" fill="#e8358a" />
             </svg>
           </div>
+        )}
+        {isNew(listing.created_at) && (
+          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider bg-[#e8358a] text-white uppercase">
+            Ny
+          </span>
         )}
       </div>
 

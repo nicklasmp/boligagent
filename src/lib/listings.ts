@@ -31,6 +31,7 @@ export async function getListings(status: ListingStatus): Promise<ListingRow[]> 
     .from("listings")
     .select("boliga_id,address,zip,city,price,sqm,rooms,energy_class,days_on_market,url,image_url,status,created_at")
     .eq("status", status)
+    .order("days_on_market", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []) as ListingRow[];
