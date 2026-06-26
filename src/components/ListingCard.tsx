@@ -80,6 +80,7 @@ export default function ListingCard({ listing, tab, index }: Props) {
             fill
             sizes="(max-width: 640px) 100vw, 640px"
             className="object-cover"
+            unoptimized
             onError={() => setImgError(true)}
           />
         ) : (
