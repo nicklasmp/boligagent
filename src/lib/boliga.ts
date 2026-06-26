@@ -19,7 +19,7 @@ export interface Listing {
   is_active: boolean;
   boliga_created: string | null;
   url: string;
-  image_url: string;
+  image_url: string | null;
 }
 
 interface BoligaResult {
@@ -37,6 +37,7 @@ interface BoligaResult {
   squaremeterPrice: number | null;
   isActive: boolean;
   createdDate: string | null;
+  images: { id: number; url: string }[] | null;
 }
 
 interface BoligaResponse {
@@ -61,7 +62,7 @@ function mapResult(r: BoligaResult): Listing {
     is_active: r.isActive ?? true,
     boliga_created: r.createdDate ?? null,
     url: `https://www.boliga.dk/bolig/${r.id}`,
-    image_url: `https://i.boliga.dk/dia/300/${r.id}.jpg`,
+    image_url: r.images?.[0]?.url ?? null,
   };
 }
 

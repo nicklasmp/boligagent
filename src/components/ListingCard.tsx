@@ -29,10 +29,15 @@ function formatPrice(p: number | null) {
   return p.toLocaleString("da-DK") + " kr.";
 }
 
-function proxyImageUrl(url: string | null) {
+function fixImageUrl(url: string | null) {
   if (!url) return null;
-  const m = url.match(/i\.boliga\.dk\/[^/]+\/[^/]+\/(\d+)\.\w+/);
-  return m ? `/api/image/${m[1]}` : url;
+  // Old records used non-existent i.boliga.dk — reconstruct correct URL from the ID
+  const old = url.match(/i\.boliga\.dk\/\S+?\/(\d+)\.jpg/);
+  if (old) {
+    const id = old[1];
+    return `https://i.boliga.org/dk/550x/${id.substring(0, 4)}/${id}.jpg`;
+  }
+  return url;
 }
 
 function isNew(createdAt: string) {
@@ -49,7 +54,7 @@ export default function ListingCard({ listing, tab, index }: Props) {
   const router = useRouter();
   const [visible, setVisible] = useState(true);
   const [imgError, setImgError] = useState(false);
-  const imageSrc = proxyImageUrl(listing.image_url);
+  const imageSrc = fixImageUrl(listing.image_url);
 
   async function act(status: ListingStatus) {
     setVisible(false);
@@ -87,7 +92,6 @@ export default function ListingCard({ listing, tab, index }: Props) {
             fill
             sizes="(max-width: 640px) 100vw, 640px"
             className="object-cover"
-            unoptimized
             onError={() => setImgError(true)}
           />
         ) : (
