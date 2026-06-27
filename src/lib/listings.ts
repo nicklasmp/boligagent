@@ -20,6 +20,7 @@ export interface ListingRow {
   image_url: string | null;
   image_urls: string[] | null;
   status: ListingStatus;
+  note: string | null;
   created_at: string;
 }
 
@@ -30,28 +31,54 @@ function getSupabase() {
   );
 }
 
-export async function getListings(status: ListingStatus): Promise<ListingRow[]> {
+export async function getListings(userId: string, status: ListingStatus): Promise<ListingRow[]> {
   const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from("listings")
-    .select("boliga_id,address,zip,city,price,sqm,lot_size,rooms,build_year,energy_class,days_on_market,sqm_price,neighborhood,url,image_url,image_urls,status,created_at")
-    .eq("status", status)
-    .order("days_on_market", { ascending: true, nullsFirst: false })
-    .order("created_at", { ascending: false });
+  const [{ data: listings, error }, { data: interactions }] = await Promise.all([
+    supabase
+      .from("listings")
+      .select("boliga_id,address,zip,city,price,sqm,lot_size,rooms,build_year,energy_class,days_on_market,sqm_price,neighborhood,url,image_url,image_urls,created_at")
+      .order("days_on_market", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("listing_interactions")
+      .select("listing_id, status, note")
+      .eq("user_id", userId),
+  ]);
+
   if (error) throw new Error(error.message);
-  return (data ?? []) as ListingRow[];
+
+  const interactionMap = new Map(
+    (interactions ?? []).map((i) => [i.listing_id, i])
+  );
+
+  return (listings ?? [])
+    .filter((l) => {
+      const interaction = interactionMap.get(l.boliga_id);
+      return (interaction?.status ?? "new") === status;
+    })
+    .map((l) => {
+      const interaction = interactionMap.get(l.boliga_id);
+      return {
+        ...l,
+        status: (interaction?.status ?? "new") as ListingStatus,
+        note: interaction?.note ?? null,
+      };
+    });
 }
 
-export async function getCounts(): Promise<Record<ListingStatus, number>> {
+export async function getCounts(userId: string): Promise<Record<ListingStatus, number>> {
   const supabase = getSupabase();
-  const [r1, r2, r3] = await Promise.all([
-    supabase.from("listings").select("*", { count: "exact", head: true }).eq("status", "new"),
-    supabase.from("listings").select("*", { count: "exact", head: true }).eq("status", "liked"),
-    supabase.from("listings").select("*", { count: "exact", head: true }).eq("status", "disliked"),
+  const [{ count: total }, { data: interactions }] = await Promise.all([
+    supabase.from("listings").select("*", { count: "exact", head: true }),
+    supabase
+      .from("listing_interactions")
+      .select("listing_id, status")
+      .eq("user_id", userId),
   ]);
-  return {
-    new: r1.count ?? 0,
-    liked: r2.count ?? 0,
-    disliked: r3.count ?? 0,
-  };
+
+  const liked = (interactions ?? []).filter((i) => i.status === "liked").length;
+  const disliked = (interactions ?? []).filter((i) => i.status === "disliked").length;
+  const newCount = (total ?? 0) - liked - disliked;
+
+  return { new: newCount, liked, disliked };
 }

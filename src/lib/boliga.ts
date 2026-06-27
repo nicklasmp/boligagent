@@ -1,6 +1,3 @@
-import chromium from "@sparticuz/chromium";
-import { chromium as playwrightChromium } from "playwright-core";
-
 const ZIP = process.env.BOLIGA_ZIP ?? "5800";
 const PROPERTY_TYPE = process.env.BOLIGA_PROPERTY_TYPE ?? "2";
 
@@ -154,15 +151,21 @@ export async function fetchListings(
     `?propertyType=${propertyType}&zipCodes=${zip}&pageSize=100&page=1&sort=daysForSale-asc`;
 
   const isLocal = process.env.NODE_ENV === "development";
-  const executablePath = isLocal
-    ? undefined
-    : await chromium.executablePath();
 
-  const browser = await playwrightChromium.launch({
-    args: chromium.args,
-    executablePath,
-    headless: true,
-  });
+  let browser;
+  if (isLocal) {
+    const { chromium: pw } = await import("playwright-core");
+    browser = await pw.launch({ headless: true });
+  } else {
+    const chromiumMod = await import("@sparticuz/chromium");
+    const { chromium: pw } = await import("playwright-core");
+    const executablePath = await chromiumMod.default.executablePath();
+    browser = await pw.launch({
+      args: chromiumMod.default.args,
+      executablePath,
+      headless: true,
+    });
+  }
 
   try {
     const context = await browser.newContext({

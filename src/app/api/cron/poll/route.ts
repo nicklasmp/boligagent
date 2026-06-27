@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { fetchListings, fetchNeighborhood } from "@/lib/boliga";
-import { sendToAll } from "@/lib/push";
+import webpush from "web-push";
 
 export async function GET(req: NextRequest) {
   const supabase = createClient(
@@ -42,7 +42,6 @@ export async function GET(req: NextRequest) {
   );
 
   if (newListings.length > 0) {
-    // Fetch neighborhoods for new listings (sequential, 1 req/s Nominatim limit)
     const withNeighborhoods = [];
     for (let i = 0; i < newListings.length; i++) {
       const l = newListings[i];
@@ -56,18 +55,46 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    await Promise.allSettled(
-      newListings.map((l) =>
-        sendToAll({
-          title: "Nyt rækkehus i 5800",
-          body: `${l.address} – ${l.price?.toLocaleString("da-DK")} kr.`,
-          url: l.url,
+    // Send push til alle brugere med gemte subscriptions
+    const { data: prefs } = await supabase
+      .from("user_preferences")
+      .select("push_subscription")
+      .not("push_subscription", "is", null);
+
+    if (prefs && prefs.length > 0) {
+      webpush.setVapidDetails(
+        process.env.VAPID_SUBJECT!,
+        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+        process.env.VAPID_PRIVATE_KEY!
+      );
+
+      const payload = JSON.stringify({
+        title: `${newListings.length === 1 ? "Nyt rækkehus" : `${newListings.length} nye rækkehuse`} i 5800`,
+        body: newListings[0].address,
+        url: newListings[0].url,
+      });
+
+      await Promise.allSettled(
+        prefs.map(async (pref) => {
+          const sub = pref.push_subscription;
+          try {
+            await webpush.sendNotification(
+              { endpoint: sub.endpoint, keys: sub.keys },
+              payload
+            );
+          } catch (err: unknown) {
+            const status = (err as { statusCode?: number }).statusCode;
+            if (status === 404 || status === 410) {
+              console.log("[push] Expired subscription, skipping");
+            } else {
+              console.error("[push] Failed:", err);
+            }
+          }
         })
-      )
-    );
+      );
+    }
   }
 
-  // Backfill image_urls for existing listings that are missing them
   if (toBackfill.length > 0) {
     await Promise.allSettled(
       toBackfill.map((l) =>

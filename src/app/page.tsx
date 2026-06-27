@@ -1,14 +1,19 @@
 export const dynamic = "force-dynamic";
 
+import { redirect } from "next/navigation";
+import { getSessionUser } from "@/lib/auth";
 import { getListings, getCounts } from "@/lib/listings";
 import ListingCard from "@/components/ListingCard";
 import TabNav from "@/components/TabNav";
 import FeedShell from "@/components/FeedShell";
 
 export default async function NyePage() {
+  const userId = await getSessionUser();
+  if (!userId) redirect("/login");
+
   const [listings, counts] = await Promise.all([
-    getListings("new"),
-    getCounts(),
+    getListings(userId, "new"),
+    getCounts(userId),
   ]);
 
   return (
