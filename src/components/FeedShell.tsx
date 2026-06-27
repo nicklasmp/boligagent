@@ -11,7 +11,17 @@ export default function FeedShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <PullToRefreshIndicator pullDistance={pullDistance} refreshing={isPtrRefreshing} />
-      {children}
+      <div
+        style={{
+          transform: `translateY(${Math.round(pullDistance * 0.38)}px)`,
+          transition: pullDistance === 0
+            ? 'transform 0.38s cubic-bezier(0.34,1.56,0.64,1)'
+            : 'none',
+          willChange: 'transform',
+        }}
+      >
+        {children}
+      </div>
     </>
   )
 }
