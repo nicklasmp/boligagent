@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const BUILD_ID = process.env.VERCEL_GIT_COMMIT_SHA ?? Date.now().toString()
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["playwright-core", "@sparticuz/chromium"],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "i.boliga.org" },
