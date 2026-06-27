@@ -12,14 +12,14 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "Boligagent",
   },
   icons: { apple: "/icons/icon-192.png" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0F4F3C",
+  themeColor: "#F7FAF9",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -28,7 +28,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="da" className={`${geist.variable} h-full antialiased`}>
-      <body className="min-h-full bg-[#0E1512] text-[#F7FAF9]" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+      <body className="min-h-full bg-[#F7FAF9] text-[#0E1512]" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <TopBar />
         {children}
         <ServiceWorkerRegistrar />

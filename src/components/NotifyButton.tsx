@@ -56,22 +56,22 @@ export default function NotifyButton() {
 
   if (status === "unsupported") {
     return (
-      <p className="text-sm text-[#9AA7A1]">
+      <p className="text-sm text-[#6B7A74]">
         Push-notifikationer understøttes ikke i denne browser.
       </p>
     );
   }
   if (status === "denied") {
     return (
-      <p className="text-sm text-[#9AA7A1]">
+      <p className="text-sm text-[#6B7A74]">
         Notifikationer er blokeret. Tillad dem i browserindstillingerne.
       </p>
     );
   }
   if (status === "subscribed") {
     return (
-      <div className="flex items-center gap-2 text-sm text-[#9AA7A1]">
-        <span className="w-2 h-2 rounded-full bg-[#52E3A0] inline-block" />
+      <div className="flex items-center gap-2 text-sm text-[#6B7A74]">
+        <span className="w-2 h-2 rounded-full bg-[#0F4F3C] inline-block" />
         Notifikationer er slået til
       </div>
     );
@@ -81,7 +81,7 @@ export default function NotifyButton() {
     <button
       onClick={subscribe}
       disabled={status === "loading"}
-      className="px-5 py-3 rounded-xl bg-[#52E3A0] text-[#0E1512] font-medium text-sm hover:bg-[#3BC98A] active:scale-95 transition disabled:opacity-50"
+      className="px-5 py-3 rounded-xl bg-[#0F4F3C] text-white font-medium text-sm hover:bg-[#0A3A2C] active:scale-95 transition disabled:opacity-50"
     >
       {status === "loading" ? "Vent…" : "Slå notifikationer til"}
     </button>

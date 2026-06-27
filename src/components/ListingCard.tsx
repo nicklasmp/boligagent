@@ -13,7 +13,7 @@ const ENERGY_COLORS: Record<string, string> = {
 
 function EnergyBadge({ label }: { label: string | null }) {
   if (!label) return null;
-  const color = ENERGY_COLORS[label] ?? "#9AA7A1";
+  const color = ENERGY_COLORS[label] ?? "#6B7A74";
   return (
     <span
       className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold leading-none"
@@ -71,8 +71,8 @@ function ImageSlider({ images, address }: { images: string[]; address: string })
   if (validImages.length === 0) {
     return (
       <div className="absolute inset-0 flex items-center justify-center">
-        <svg width="48" height="48" viewBox="0 0 120 120" fill="none" opacity="0.25">
-          <path d="M22 54 60 20l38 34v44a4 4 0 0 1-4 4H26a4 4 0 0 1-4-4V54Z" stroke="#52E3A0" strokeWidth="9" strokeLinejoin="round"/>
+        <svg width="48" height="48" viewBox="0 0 120 120" fill="none" opacity="0.2">
+          <path d="M22 54 60 20l38 34v44a4 4 0 0 1-4 4H26a4 4 0 0 1-4-4V54Z" stroke="#0F4F3C" strokeWidth="9" strokeLinejoin="round"/>
         </svg>
       </div>
     );
@@ -108,7 +108,7 @@ function ImageSlider({ images, address }: { images: string[]; address: string })
         <>
           <button
             onClick={(e) => { e.stopPropagation(); prev(); }}
-            className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 flex items-center justify-center text-white backdrop-blur-sm hover:bg-black/70 transition"
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 flex items-center justify-center text-white backdrop-blur-sm hover:bg-black/60 transition"
             aria-label="Forrige billede"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -117,7 +117,7 @@ function ImageSlider({ images, address }: { images: string[]; address: string })
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); next(); }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 flex items-center justify-center text-white backdrop-blur-sm hover:bg-black/70 transition"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 flex items-center justify-center text-white backdrop-blur-sm hover:bg-black/60 transition"
             aria-label="Næste billede"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -132,7 +132,7 @@ function ImageSlider({ images, address }: { images: string[]; address: string })
                 onClick={(e) => { e.stopPropagation(); setIndex(i); }}
                 className="w-1.5 h-1.5 rounded-full transition-all"
                 style={{
-                  background: i === effectiveIndex ? "#fff" : "rgba(255,255,255,0.4)",
+                  background: i === effectiveIndex ? "#fff" : "rgba(255,255,255,0.5)",
                   transform: i === effectiveIndex ? "scale(1.25)" : "scale(1)",
                 }}
                 aria-label={`Billede ${i + 1}`}
@@ -140,7 +140,7 @@ function ImageSlider({ images, address }: { images: string[]; address: string })
             ))}
           </div>
 
-          <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-black/50 text-white text-[10px] font-medium backdrop-blur-sm">
+          <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-black/40 text-white text-[10px] font-medium backdrop-blur-sm">
             {effectiveIndex + 1}/{validImages.length}
           </div>
         </>
@@ -183,15 +183,16 @@ export default function ListingCard({ listing, tab, index }: Props) {
 
   return (
     <div
-      className="card-in rounded-2xl overflow-hidden bg-[#0F2318] border border-[#1A3428]"
+      className="card-in rounded-2xl overflow-hidden bg-white border border-[#DCE5E1]"
       style={{
         animationDelay: `${index * 55}ms`,
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(-6px) scale(0.98)",
         transition: "opacity 220ms ease, transform 220ms ease",
+        boxShadow: "0 1px 4px rgba(14,21,18,0.06)",
       }}
     >
-      <div className="relative w-full h-48 bg-[#0A1A11]">
+      <div className="relative w-full h-48 bg-[#EDF2F0]">
         <ImageSlider images={images} address={listing.address} />
         {isNew(listing.created_at) && (
           <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider bg-[#52E3A0] text-[#0E1512] uppercase z-10">
@@ -202,12 +203,12 @@ export default function ListingCard({ listing, tab, index }: Props) {
 
       <div className="px-4 pt-3 pb-4 flex flex-col gap-3">
         <div>
-          <p className="font-semibold text-[#F7FAF9] leading-snug">{listing.address}</p>
-          <p className="text-sm text-[#9AA7A1]">{listing.zip} {listing.city}</p>
+          <p className="font-semibold text-[#0E1512] leading-snug">{listing.address}</p>
+          <p className="text-sm text-[#6B7A74]">{listing.zip} {listing.city}</p>
         </div>
 
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#9AA7A1]">
-          <span className="text-[#F7FAF9] font-medium">{formatPrice(listing.price)}</span>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#6B7A74]">
+          <span className="text-[#0E1512] font-medium">{formatPrice(listing.price)}</span>
           {listing.sqm && <span>{listing.sqm} m²</span>}
           {listing.rooms && <span>{listing.rooms} vær.</span>}
           {listing.energy_class && <EnergyBadge label={listing.energy_class} />}
@@ -221,7 +222,7 @@ export default function ListingCard({ listing, tab, index }: Props) {
             href={listing.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-[#9AA7A1] hover:text-[#52E3A0] transition-colors"
+            className="text-xs text-[#6B7A74] hover:text-[#0F4F3C] transition-colors"
           >
             Se på Boliga ↗
           </a>
@@ -230,14 +231,14 @@ export default function ListingCard({ listing, tab, index }: Props) {
             <div className="flex gap-2">
               <button
                 onClick={() => act("disliked")}
-                className="w-10 h-10 rounded-xl bg-[#0A1A11] flex items-center justify-center text-[#9AA7A1] hover:text-[#F7FAF9] active:scale-90 transition"
+                className="w-10 h-10 rounded-xl bg-[#EDF2F0] flex items-center justify-center text-[#6B7A74] hover:text-[#0E1512] active:scale-90 transition"
                 aria-label="Nej tak"
               >
                 <ThumbDown />
               </button>
               <button
                 onClick={() => act("liked")}
-                className="w-10 h-10 rounded-xl bg-[#52E3A0]/15 flex items-center justify-center text-[#52E3A0] hover:bg-[#52E3A0]/25 active:scale-90 transition"
+                className="w-10 h-10 rounded-xl bg-[#C5F4DE] flex items-center justify-center text-[#0F4F3C] hover:bg-[#52E3A0]/40 active:scale-90 transition"
                 aria-label="Ja tak"
               >
                 <ThumbUp />
@@ -249,13 +250,13 @@ export default function ListingCard({ listing, tab, index }: Props) {
             <div className="flex gap-2">
               <button
                 onClick={() => act("new")}
-                className="px-3 h-8 rounded-lg bg-[#0A1A11] text-xs text-[#9AA7A1] hover:text-[#F7FAF9] active:scale-95 transition"
+                className="px-3 h-8 rounded-lg bg-[#EDF2F0] text-xs text-[#6B7A74] hover:text-[#0E1512] active:scale-95 transition"
               >
                 Fortryd
               </button>
               <button
                 onClick={() => act(tab === "liked" ? "disliked" : "liked")}
-                className="px-3 h-8 rounded-lg bg-[#0A1A11] text-xs text-[#9AA7A1] hover:text-[#F7FAF9] active:scale-95 transition"
+                className="px-3 h-8 rounded-lg bg-[#EDF2F0] text-xs text-[#6B7A74] hover:text-[#0E1512] active:scale-95 transition"
               >
                 {tab === "liked" ? "Nej tak" : "Ja tak"}
               </button>

@@ -3,8 +3,8 @@
   "short_name": "Boligagent",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0E1512",
-  "theme_color": "#0F4F3C",
+  "background_color": "#F7FAF9",
+  "theme_color": "#F7FAF9",
   "icons": [
     {
       "src": "/icons/icon-192.png",

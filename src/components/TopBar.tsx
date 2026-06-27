@@ -29,7 +29,7 @@ export default function TopBar() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-40 h-14 bg-[#0E1512]/90 backdrop-blur-sm border-b border-[#1A3428] flex items-center justify-between px-4">
+      <header className="fixed top-0 left-0 right-0 z-40 h-14 bg-[#F7FAF9]/90 backdrop-blur-sm border-b border-[#DCE5E1] flex items-center justify-between px-4">
         <div className="flex items-center gap-2.5">
           <div style={{ width: 26, height: 26, borderRadius: 6, background: '#0F4F3C', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg width="18" height="18" viewBox="0 0 120 120" fill="none">
@@ -37,7 +37,7 @@ export default function TopBar() {
               <text x="60" y="91" textAnchor="middle" fontFamily="Sora, system-ui, sans-serif" fontWeight="800" fontSize="56" fill="white">B</text>
             </svg>
           </div>
-          <h1 className="font-semibold text-[#F7FAF9] text-base tracking-tight">Boligagent</h1>
+          <h1 className="font-semibold text-[#0E1512] text-base tracking-tight">Boligagent</h1>
         </div>
 
         <div className="flex items-center gap-1">
@@ -46,8 +46,8 @@ export default function TopBar() {
             disabled={refreshing}
             className="flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-medium transition-all active:scale-95 disabled:opacity-60"
             style={{
-              background: newCount !== null && newCount > 0 ? "#52E3A0" : "#0F2318",
-              color: newCount !== null && newCount > 0 ? "#0E1512" : "#9AA7A1",
+              background: newCount !== null && newCount > 0 ? "#52E3A0" : "#EDF2F0",
+              color: newCount !== null && newCount > 0 ? "#0E1512" : "#6B7A74",
             }}
             aria-label="Opdater nu"
           >
@@ -77,7 +77,7 @@ export default function TopBar() {
 
           <button
             onClick={() => setSheetOpen(true)}
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-[#9AA7A1] hover:text-[#F7FAF9] active:scale-90 transition"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-[#6B7A74] hover:text-[#0E1512] active:scale-90 transition"
             aria-label="Notifikationer"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
