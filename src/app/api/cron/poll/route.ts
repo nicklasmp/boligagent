@@ -80,5 +80,6 @@ export async function GET(req: NextRequest) {
     checked: listings.length,
     new: newListings.length,
     addresses: newListings.map((l) => l.address),
+    _debug: listings.slice(0, 2).map((l) => ({ id: l.boliga_id, address: l.address })),
   });
 }

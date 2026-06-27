@@ -155,10 +155,20 @@ export async function fetchListings(zip = ZIP): Promise<Listing[]> {
 
   if (!res.ok) throw new Error(`Boligsiden API ${res.status}`);
 
-  const data: BoligsidenResponse = await res.json();
+  const text = await res.text();
+  // Throw with raw response so we can see what Boligsiden returns from Vercel
+  let data: BoligsidenResponse;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(`Boligsiden parse error. Body: ${text.slice(0, 500)}`);
+  }
+
   const all = data.cases ?? [];
   const types = [...new Set(all.map((c) => c.addressType))];
-  console.log(`[boligsiden] totalHits=${data.totalHits} cases=${all.length} types=${JSON.stringify(types)}`);
+  if (all.length === 0) {
+    throw new Error(`Boligsiden returned 0 cases. totalHits=${data.totalHits}. Body preview: ${text.slice(0, 300)}`);
+  }
 
   return all
     .filter((c) => c.addressType === "terraced house")
