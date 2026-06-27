@@ -16,7 +16,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const listings = await fetchListings();
+  let listings;
+  try {
+    listings = await fetchListings();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: "fetchListings failed", detail: msg }, { status: 500 });
+  }
 
   const { data: existing, error } = await supabase
     .from("listings")
