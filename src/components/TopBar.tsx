@@ -48,8 +48,8 @@ export default function TopBar() {
             disabled={refreshing}
             className="flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-medium transition-all active:scale-95 disabled:opacity-60"
             style={{
-              background: newCount !== null && newCount > 0 ? "#52E3A0" : "#EDF2F0",
-              color: newCount !== null && newCount > 0 ? "#0E1512" : "#6B7A74",
+              background: newCount !== null && newCount > 0 ? "#52E3A0" : "#D1E8DF",
+              color: newCount !== null && newCount > 0 ? "#0E1512" : "#0F4F3C",
             }}
             aria-label="Opdater nu"
           >
