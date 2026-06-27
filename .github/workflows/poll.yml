@@ -13,17 +13,31 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          DATA=$(curl -sf \
+          HTTP_STATUS=$(curl -s -o /tmp/boliga.json -w "%{http_code}" \
             -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36" \
             -H "Accept: application/json, text/plain, */*" \
             -H "Accept-Language: da-DK,da;q=0.9,en;q=0.8" \
             -H "Referer: https://www.boliga.dk/" \
             "https://api.boliga.dk/api/v2/search/results?propertyType=2&zipCodes=5800&pageSize=100&page=1&sort=daysForSale-asc")
 
-          echo "Boliga response (first 200 chars): ${DATA:0:200}"
+          echo "Boliga HTTP status: $HTTP_STATUS"
+          echo "Boliga response (first 300 chars): $(head -c 300 /tmp/boliga.json)"
 
-          curl -sf -X POST \
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "Boliga fetch failed with status $HTTP_STATUS"
+            exit 1
+          fi
+
+          VERCEL_STATUS=$(curl -s -o /tmp/vercel.json -w "%{http_code}" -X POST \
             -H "Content-Type: application/json" \
             -H "x-cron-secret: $CRON_SECRET" \
-            -d "$DATA" \
-            https://boligagent.vercel.app/api/cron/poll
+            -d @/tmp/boliga.json \
+            https://boligagent.vercel.app/api/cron/poll)
+
+          echo "Vercel HTTP status: $VERCEL_STATUS"
+          echo "Vercel response: $(cat /tmp/vercel.json)"
+
+          if [ "$VERCEL_STATUS" != "200" ]; then
+            echo "Vercel POST failed with status $VERCEL_STATUS"
+            exit 1
+          fi
