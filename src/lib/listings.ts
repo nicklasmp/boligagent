@@ -16,6 +16,8 @@ export interface ListingRow {
   days_on_market: number | null;
   sqm_price: number | null;
   neighborhood: string | null;
+  lat: number | null;
+  lon: number | null;
   url: string;
   image_url: string | null;
   image_urls: string[] | null;
@@ -36,7 +38,7 @@ export async function getListings(userId: string, status: ListingStatus): Promis
   const [{ data: listings, error }, { data: interactions }] = await Promise.all([
     supabase
       .from("listings")
-      .select("boliga_id,address,zip,city,price,sqm,lot_size,rooms,build_year,energy_class,days_on_market,sqm_price,neighborhood,url,image_url,image_urls,created_at")
+      .select("boliga_id,address,zip,city,price,sqm,lot_size,rooms,build_year,energy_class,days_on_market,sqm_price,neighborhood,lat,lon,url,image_url,image_urls,created_at")
       .order("days_on_market", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: false }),
     supabase

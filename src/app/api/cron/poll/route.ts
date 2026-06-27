@@ -45,8 +45,8 @@ export async function GET(req: NextRequest) {
     const withNeighborhoods = [];
     for (let i = 0; i < newListings.length; i++) {
       const l = newListings[i];
-      const neighborhood = await fetchNeighborhood(l.address, l.zip, l.city);
-      withNeighborhoods.push({ ...l, neighborhood, status: "new" });
+      const { neighborhood, lat, lon } = await fetchNeighborhood(l.address, l.zip, l.city);
+      withNeighborhoods.push({ ...l, neighborhood, lat, lon, status: "new" });
       if (i < newListings.length - 1) await new Promise((r) => setTimeout(r, 1100));
     }
 

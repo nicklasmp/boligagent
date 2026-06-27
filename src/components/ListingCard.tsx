@@ -162,7 +162,13 @@ export default function ListingCard({ listing, tab, index }: Props) {
   const router = useRouter();
   const [visible, setVisible] = useState(true);
   const [acting, setActing] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
   const isNew = useIsNew(listing.created_at);
+
+  const mapUrl =
+    listing.lat && listing.lon
+      ? `https://www.openstreetmap.org/export/embed.html?bbox=${listing.lon - 0.018},${listing.lat - 0.009},${listing.lon + 0.018},${listing.lat + 0.009}&layer=mapnik&marker=${listing.lat},${listing.lon}`
+      : null;
 
   const images: string[] =
     listing.image_urls && listing.image_urls.length > 0
@@ -225,7 +231,7 @@ export default function ListingCard({ listing, tab, index }: Props) {
           <p className="text-[15px] font-medium text-[#0E1512] mt-1.5 leading-snug">
             {listing.address}
           </p>
-          <div className="flex items-center gap-1 mt-1">
+          <div className="flex items-center gap-1 mt-1 flex-wrap">
             <span className="text-[#9AA7A1]"><IconPin /></span>
             <a
               href={mapsUrl}
@@ -242,7 +248,34 @@ export default function ListingCard({ listing, tab, index }: Props) {
                 &nbsp;·&nbsp;{listing.days_on_market === 0 ? "Ny i dag" : `${listing.days_on_market} dage til salg`}
               </span>
             )}
+            {mapUrl && (
+              <button
+                onClick={() => setMapOpen((o) => !o)}
+                className="ml-auto text-[12px] font-medium transition-colors flex items-center gap-1"
+                style={{ color: mapOpen ? "#0F4F3C" : "#9AA7A1" }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
+                  <line x1="9" y1="3" x2="9" y2="18" />
+                  <line x1="15" y1="6" x2="15" y2="21" />
+                </svg>
+                {mapOpen ? "Skjul kort" : "Vis kort"}
+              </button>
+            )}
           </div>
+
+          {mapOpen && mapUrl && (
+            <div className="rounded-xl overflow-hidden border border-[#DCE5E1]" style={{ height: 200 }}>
+              <iframe
+                src={mapUrl}
+                width="100%"
+                height="200"
+                style={{ border: 0 }}
+                loading="lazy"
+                title={`Kort over ${listing.address}`}
+              />
+            </div>
+          )}
         </div>
 
         {/* Stats grid */}

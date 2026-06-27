@@ -20,6 +20,8 @@ export interface Listing {
   image_url: string | null;
   image_urls: string[];
   neighborhood: string | null;
+  lat: number | null;
+  lon: number | null;
 }
 
 interface BoligaResult {
@@ -73,21 +75,31 @@ function pickImageUrl(img: { imageSources: BoligsidenImageSource[] }): string {
   );
 }
 
-// Fetch neighborhood name from Nominatim for a Danish address.
-// Returns neighbourhood > hamlet > null. Nominatim ToS: max 1 req/s.
-export async function fetchNeighborhood(address: string, zip: string, city: string): Promise<string | null> {
+// Fetch neighborhood + coordinates from Nominatim for a Danish address.
+// Nominatim ToS: max 1 req/s.
+export async function fetchNeighborhood(
+  address: string,
+  zip: string,
+  city: string
+): Promise<{ neighborhood: string | null; lat: number | null; lon: number | null }> {
   try {
     const q = `${address}, ${zip} ${city}, Denmark`;
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=1`;
     const res = await fetch(url, {
       headers: { "User-Agent": "Boligagent/1.0 (nicklas-pedersen@outlook.com)" },
     });
-    if (!res.ok) return null;
+    if (!res.ok) return { neighborhood: null, lat: null, lon: null };
     const data = await res.json();
-    const a = data[0]?.address;
-    return a?.neighbourhood ?? a?.hamlet ?? null;
+    const hit = data[0];
+    if (!hit) return { neighborhood: null, lat: null, lon: null };
+    const a = hit.address;
+    return {
+      neighborhood: a?.neighbourhood ?? a?.hamlet ?? null,
+      lat: hit.lat ? parseFloat(hit.lat) : null,
+      lon: hit.lon ? parseFloat(hit.lon) : null,
+    };
   } catch {
-    return null;
+    return { neighborhood: null, lat: null, lon: null };
   }
 }
 
@@ -121,7 +133,7 @@ export async function fetchBoligsidenMap(zip: string): Promise<Map<string, strin
   }
 }
 
-function mapResult(r: BoligaResult): Omit<Listing, "image_urls" | "neighborhood"> {
+function mapResult(r: BoligaResult): Omit<Listing, "image_urls" | "neighborhood" | "lat" | "lon"> {
   return {
     boliga_id: r.id,
     address: r.street,
@@ -191,7 +203,7 @@ export async function fetchListings(
       if (image_urls.length === 0 && l.image_url) {
         image_urls = [l.image_url];
       }
-      return { ...l, image_urls, neighborhood: null };
+      return { ...l, image_urls, neighborhood: null, lat: null, lon: null };
     });
   } finally {
     await browser.close();
