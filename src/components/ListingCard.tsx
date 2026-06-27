@@ -233,7 +233,9 @@ export default function ListingCard({ listing, tab, index }: Props) {
               rel="noopener noreferrer"
               className="text-[13px] text-[#6B7A74] hover:text-[#0F4F3C] transition-colors"
             >
-              {listing.zip} {listing.city}
+              {listing.neighborhood
+                ? `${listing.neighborhood}, ${listing.city}`
+                : `${listing.zip} ${listing.city}`}
             </a>
             {listing.days_on_market != null && (
               <span className="text-[13px] text-[#9AA7A1]">

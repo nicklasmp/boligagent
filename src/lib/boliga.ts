@@ -1,5 +1,3 @@
-import { chromium } from "playwright";
-
 const ZIP = process.env.BOLIGA_ZIP ?? "5800";
 const PROPERTY_TYPE = process.env.BOLIGA_PROPERTY_TYPE ?? "2";
 
@@ -21,6 +19,7 @@ export interface Listing {
   url: string;
   image_url: string | null;
   image_urls: string[];
+  neighborhood: string | null;
 }
 
 interface BoligaResult {
@@ -74,6 +73,24 @@ function pickImageUrl(img: { imageSources: BoligsidenImageSource[] }): string {
   );
 }
 
+// Fetch neighborhood name from Nominatim for a Danish address.
+// Returns neighbourhood > hamlet > null. Nominatim ToS: max 1 req/s.
+export async function fetchNeighborhood(address: string, zip: string, city: string): Promise<string | null> {
+  try {
+    const q = `${address}, ${zip} ${city}, Denmark`;
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=1`;
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Boligagent/1.0 (nicklas-pedersen@outlook.com)" },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const a = data[0]?.address;
+    return a?.neighbourhood ?? a?.hamlet ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // Fetch all Boligsiden cases for a zip and return a map keyed by
 // lowercase "roadname housenumber" for O(1) lookup per listing.
 export async function fetchBoligsidenMap(zip: string): Promise<Map<string, string[]>> {
@@ -104,7 +121,7 @@ export async function fetchBoligsidenMap(zip: string): Promise<Map<string, strin
   }
 }
 
-function mapResult(r: BoligaResult): Omit<Listing, "image_urls"> {
+function mapResult(r: BoligaResult): Omit<Listing, "image_urls" | "neighborhood"> {
   return {
     boliga_id: r.id,
     address: r.street,
@@ -133,48 +150,31 @@ export async function fetchListings(
     `https://api.boliga.dk/api/v2/search/results` +
     `?propertyType=${propertyType}&zipCodes=${zip}&pageSize=100&page=1&sort=daysForSale-asc`;
 
-  const browser = await chromium.launch({ headless: true });
-  try {
-    const context = await browser.newContext({
-      userAgent:
+  const res = await fetch(apiUrl, {
+    headers: {
+      "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-      locale: "da-DK",
-      extraHTTPHeaders: {
-        Accept: "application/json, text/plain, */*",
-        "Accept-Language": "da-DK,da;q=0.9,en;q=0.8",
-        Referer: "https://www.boliga.dk/",
-      },
-    });
-    const page = await context.newPage();
+      Accept: "application/json, text/plain, */*",
+      "Accept-Language": "da-DK,da;q=0.9,en;q=0.8",
+      Referer: "https://www.boliga.dk/",
+    },
+  });
 
-    const responsePromise = page.waitForResponse(
-      (r) => r.url().startsWith("https://api.boliga.dk/api/v2/search/results"),
-      { timeout: 30000 }
-    );
-    await page.goto(apiUrl, { waitUntil: "commit" });
-    const response = await responsePromise;
-
-    if (!response.ok()) {
-      throw new Error(`Boliga API ${response.status()}`);
-    }
-
-    const data: BoligaResponse = await response.json();
-    const base = (data.results ?? []).map(mapResult);
-
-    // Fetch Boligsiden images once for the whole zip, then match per listing
-    const boligsidenMap = await fetchBoligsidenMap(zip);
-
-    const enriched = base.map((l) => {
-      const key = l.address.toLowerCase();
-      let image_urls = boligsidenMap.get(key) ?? [];
-      if (image_urls.length === 0 && l.image_url) {
-        image_urls = [l.image_url];
-      }
-      return { ...l, image_urls };
-    });
-
-    return enriched;
-  } finally {
-    await browser.close();
+  if (!res.ok) {
+    throw new Error(`Boliga API ${res.status}`);
   }
+
+  const data: BoligaResponse = await res.json();
+  const base = (data.results ?? []).map(mapResult);
+
+  const boligsidenMap = await fetchBoligsidenMap(zip);
+
+  return base.map((l) => {
+    const key = l.address.toLowerCase();
+    let image_urls = boligsidenMap.get(key) ?? [];
+    if (image_urls.length === 0 && l.image_url) {
+      image_urls = [l.image_url];
+    }
+    return { ...l, image_urls, neighborhood: null };
+  });
 }

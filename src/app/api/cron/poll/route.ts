@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { fetchListings } from "@/lib/boliga";
+import { fetchListings, fetchNeighborhood } from "@/lib/boliga";
 import { sendToAll } from "@/lib/push";
 
 export async function GET(req: NextRequest) {
@@ -36,9 +36,16 @@ export async function GET(req: NextRequest) {
   );
 
   if (newListings.length > 0) {
-    const { error: insertError } = await supabase.from("listings").insert(
-      newListings.map((l) => ({ ...l, status: "new" }))
-    );
+    // Fetch neighborhoods for new listings (sequential, 1 req/s Nominatim limit)
+    const withNeighborhoods = [];
+    for (let i = 0; i < newListings.length; i++) {
+      const l = newListings[i];
+      const neighborhood = await fetchNeighborhood(l.address, l.zip, l.city);
+      withNeighborhoods.push({ ...l, neighborhood, status: "new" });
+      if (i < newListings.length - 1) await new Promise((r) => setTimeout(r, 1100));
+    }
+
+    const { error: insertError } = await supabase.from("listings").insert(withNeighborhoods);
     if (insertError) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
