@@ -5,9 +5,10 @@ import NotifyButton from "./NotifyButton";
 interface Props {
   open: boolean;
   onClose: () => void;
+  onStatusChange?: (subscribed: boolean) => void;
 }
 
-export default function NotifySheet({ open, onClose }: Props) {
+export default function NotifySheet({ open, onClose, onStatusChange }: Props) {
   return (
     <>
       <div
@@ -37,9 +38,9 @@ export default function NotifySheet({ open, onClose }: Props) {
         </div>
         <div className="px-5 py-6">
           <p className="text-sm text-[#6B7A74] mb-5 leading-relaxed">
-            Slå notifikationer til for at få besked, når et nyt rækkehus dukker op i Nyborg (5800).
+            Få besked når et nyt rækkehus dukker op i Nyborg (5800).
           </p>
-          <NotifyButton />
+          <NotifyButton onStatusChange={onStatusChange} />
         </div>
       </div>
     </>
