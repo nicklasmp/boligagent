@@ -157,9 +157,13 @@ export async function fetchListings(
     const base = (data.results ?? []).map(mapResult);
 
     // Enrich with Boligsiden images in parallel (best-effort)
+    // Falls back to Boliga's own image if Boligsiden has no match
     const enriched = await Promise.all(
       base.map(async (l) => {
-        const image_urls = await fetchBoligsidenImages(l.address, l.zip);
+        let image_urls = await fetchBoligsidenImages(l.address, l.zip);
+        if (image_urls.length === 0 && l.image_url) {
+          image_urls = [l.image_url];
+        }
         return { ...l, image_urls };
       })
     );
