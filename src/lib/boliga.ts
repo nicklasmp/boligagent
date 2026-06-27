@@ -179,20 +179,28 @@ export async function fetchListings(
   try {
     const page = await browser.newPage();
     await page.setUserAgent(
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
     );
-    await page.setExtraHTTPHeaders({
-      Accept: "application/json, text/plain, */*",
-      "Accept-Language": "da-DK,da;q=0.9,en;q=0.8",
-      Referer: "https://www.boliga.dk/",
-    });
 
-    const response = await page.goto(apiUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
-    if (!response || !response.ok()) {
-      throw new Error(`Boliga API ${response?.status() ?? 0}`);
+    // Visit homepage first to get Cloudflare cookies, then fetch API from within browser context
+    await page.goto("https://www.boliga.dk/", { waitUntil: "domcontentloaded", timeout: 30000 });
+
+    const result = await page.evaluate(async (url: string) => {
+      const res = await fetch(url, {
+        headers: {
+          Accept: "application/json, text/plain, */*",
+          "Accept-Language": "da-DK,da;q=0.9,en;q=0.8",
+        },
+      });
+      if (!res.ok) return { ok: false, status: res.status, body: null };
+      const body = await res.text();
+      return { ok: true, status: res.status, body };
+    }, apiUrl);
+
+    if (!result.ok || !result.body) {
+      throw new Error(`Boliga API ${result.status}`);
     }
-    const text = await response.text();
-    const data: BoligaResponse = JSON.parse(text);
+    const data: BoligaResponse = JSON.parse(result.body);
     const base = (data.results ?? []).map(mapResult);
 
     const boligsidenMap = await fetchBoligsidenMap(zip);
