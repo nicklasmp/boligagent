@@ -6,7 +6,14 @@ import { PullToRefreshIndicator } from '@/components/PullToRefreshIndicator'
 
 export default function FeedShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const { pullDistance, isPtrRefreshing } = usePullToRefresh(() => router.refresh())
+
+  async function handleRefresh() {
+    // Backfill any listings missing image_urls (fast — no Playwright)
+    await fetch('/api/backfill-images', { method: 'POST' }).catch(() => {})
+    router.refresh()
+  }
+
+  const { pullDistance, isPtrRefreshing } = usePullToRefresh(handleRefresh)
 
   return (
     <>

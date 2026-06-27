@@ -76,7 +76,7 @@ function pickImageUrl(img: { imageSources: BoligsidenImageSource[] }): string {
 
 // Fetch all Boligsiden cases for a zip and return a map keyed by
 // lowercase "roadname housenumber" for O(1) lookup per listing.
-async function fetchBoligsidenMap(zip: string): Promise<Map<string, string[]>> {
+export async function fetchBoligsidenMap(zip: string): Promise<Map<string, string[]>> {
   const url =
     `https://api.boligsiden.dk/search/cases` +
     `?zipCodes=${encodeURIComponent(zip)}&per_page=200&page=1`;
