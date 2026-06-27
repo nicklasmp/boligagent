@@ -18,8 +18,8 @@ export default async function NyePage() {
         <FeedShell>
           {listings.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-center gap-3">
-              <svg width="40" height="40" viewBox="0 0 36 36" fill="none" opacity="0.2">
-                <path d="M5 17L18 5L31 17V32H23V24H13V32H5V17Z" fill="#e8358a" />
+              <svg width="40" height="40" viewBox="0 0 120 120" fill="none" opacity="0.3">
+                <path d="M22 54 60 20l38 34v44a4 4 0 0 1-4 4H26a4 4 0 0 1-4-4V54Z" stroke="#52E3A0" strokeWidth="9" strokeLinejoin="round"/>
               </svg>
               <p className="text-[#a0a0a0] text-sm leading-relaxed max-w-xs">
                 Ingen nye rækkehuse lige nu — du får en notifikation, når et nyt dukker op.

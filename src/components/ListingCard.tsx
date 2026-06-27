@@ -13,7 +13,7 @@ const ENERGY_COLORS: Record<string, string> = {
 
 function EnergyBadge({ label }: { label: string | null }) {
   if (!label) return null;
-  const color = ENERGY_COLORS[label] ?? "#a0a0a0";
+  const color = ENERGY_COLORS[label] ?? "#9AA7A1";
   return (
     <span
       className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold leading-none"
@@ -71,8 +71,8 @@ function ImageSlider({ images, address }: { images: string[]; address: string })
   if (validImages.length === 0) {
     return (
       <div className="absolute inset-0 flex items-center justify-center">
-        <svg width="48" height="48" viewBox="0 0 36 36" fill="none" opacity="0.2">
-          <path d="M5 17L18 5L31 17V32H23V24H13V32H5V17Z" fill="#e8358a" />
+        <svg width="48" height="48" viewBox="0 0 120 120" fill="none" opacity="0.25">
+          <path d="M22 54 60 20l38 34v44a4 4 0 0 1-4 4H26a4 4 0 0 1-4-4V54Z" stroke="#52E3A0" strokeWidth="9" strokeLinejoin="round"/>
         </svg>
       </div>
     );
@@ -104,7 +104,6 @@ function ImageSlider({ images, address }: { images: string[]; address: string })
         </div>
       ))}
 
-      {/* Prev/Next arrows — only show if more than 1 image */}
       {validImages.length > 1 && (
         <>
           <button
@@ -126,7 +125,6 @@ function ImageSlider({ images, address }: { images: string[]; address: string })
             </svg>
           </button>
 
-          {/* Dot indicators */}
           <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
             {validImages.map((_, i) => (
               <button
@@ -142,7 +140,6 @@ function ImageSlider({ images, address }: { images: string[]; address: string })
             ))}
           </div>
 
-          {/* Counter */}
           <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-black/50 text-white text-[10px] font-medium backdrop-blur-sm">
             {effectiveIndex + 1}/{validImages.length}
           </div>
@@ -162,7 +159,6 @@ export default function ListingCard({ listing, tab, index }: Props) {
   const router = useRouter();
   const [visible, setVisible] = useState(true);
 
-  // Build image list: prefer Boligsiden images, fall back to Boliga single image
   const images: string[] =
     listing.image_urls && listing.image_urls.length > 0
       ? listing.image_urls
@@ -187,7 +183,7 @@ export default function ListingCard({ listing, tab, index }: Props) {
 
   return (
     <div
-      className="card-in rounded-2xl overflow-hidden bg-[#1c1c1c] border border-[#2a2a2a]"
+      className="card-in rounded-2xl overflow-hidden bg-[#0F2318] border border-[#1A3428]"
       style={{
         animationDelay: `${index * 55}ms`,
         opacity: visible ? 1 : 0,
@@ -195,27 +191,23 @@ export default function ListingCard({ listing, tab, index }: Props) {
         transition: "opacity 220ms ease, transform 220ms ease",
       }}
     >
-      {/* Image slider */}
-      <div className="relative w-full h-48 bg-[#232323]">
+      <div className="relative w-full h-48 bg-[#0A1A11]">
         <ImageSlider images={images} address={listing.address} />
         {isNew(listing.created_at) && (
-          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider bg-[#e8358a] text-white uppercase z-10">
+          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider bg-[#52E3A0] text-[#0E1512] uppercase z-10">
             Ny
           </span>
         )}
       </div>
 
-      {/* Body */}
       <div className="px-4 pt-3 pb-4 flex flex-col gap-3">
-        {/* Address */}
         <div>
-          <p className="font-semibold text-[#f5f5f5] leading-snug">{listing.address}</p>
-          <p className="text-sm text-[#a0a0a0]">{listing.zip} {listing.city}</p>
+          <p className="font-semibold text-[#F7FAF9] leading-snug">{listing.address}</p>
+          <p className="text-sm text-[#9AA7A1]">{listing.zip} {listing.city}</p>
         </div>
 
-        {/* Stats row */}
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#a0a0a0]">
-          <span className="text-[#f5f5f5] font-medium">{formatPrice(listing.price)}</span>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#9AA7A1]">
+          <span className="text-[#F7FAF9] font-medium">{formatPrice(listing.price)}</span>
           {listing.sqm && <span>{listing.sqm} m²</span>}
           {listing.rooms && <span>{listing.rooms} vær.</span>}
           {listing.energy_class && <EnergyBadge label={listing.energy_class} />}
@@ -224,13 +216,12 @@ export default function ListingCard({ listing, tab, index }: Props) {
           )}
         </div>
 
-        {/* Actions row */}
         <div className="flex items-center justify-between pt-1">
           <a
             href={listing.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-[#a0a0a0] hover:text-[#e8358a] transition-colors"
+            className="text-xs text-[#9AA7A1] hover:text-[#52E3A0] transition-colors"
           >
             Se på Boliga ↗
           </a>
@@ -239,14 +230,14 @@ export default function ListingCard({ listing, tab, index }: Props) {
             <div className="flex gap-2">
               <button
                 onClick={() => act("disliked")}
-                className="w-10 h-10 rounded-xl bg-[#232323] flex items-center justify-center text-[#a0a0a0] hover:text-[#f5f5f5] active:scale-90 transition"
+                className="w-10 h-10 rounded-xl bg-[#0A1A11] flex items-center justify-center text-[#9AA7A1] hover:text-[#F7FAF9] active:scale-90 transition"
                 aria-label="Nej tak"
               >
                 <ThumbDown />
               </button>
               <button
                 onClick={() => act("liked")}
-                className="w-10 h-10 rounded-xl bg-[#e8358a]/15 flex items-center justify-center text-[#e8358a] hover:bg-[#e8358a]/25 active:scale-90 transition"
+                className="w-10 h-10 rounded-xl bg-[#52E3A0]/15 flex items-center justify-center text-[#52E3A0] hover:bg-[#52E3A0]/25 active:scale-90 transition"
                 aria-label="Ja tak"
               >
                 <ThumbUp />
@@ -258,13 +249,13 @@ export default function ListingCard({ listing, tab, index }: Props) {
             <div className="flex gap-2">
               <button
                 onClick={() => act("new")}
-                className="px-3 h-8 rounded-lg bg-[#232323] text-xs text-[#a0a0a0] hover:text-[#f5f5f5] active:scale-95 transition"
+                className="px-3 h-8 rounded-lg bg-[#0A1A11] text-xs text-[#9AA7A1] hover:text-[#F7FAF9] active:scale-95 transition"
               >
                 Fortryd
               </button>
               <button
                 onClick={() => act(tab === "liked" ? "disliked" : "liked")}
-                className="px-3 h-8 rounded-lg bg-[#232323] text-xs text-[#a0a0a0] hover:text-[#f5f5f5] active:scale-95 transition"
+                className="px-3 h-8 rounded-lg bg-[#0A1A11] text-xs text-[#9AA7A1] hover:text-[#F7FAF9] active:scale-95 transition"
               >
                 {tab === "liked" ? "Nej tak" : "Ja tak"}
               </button>

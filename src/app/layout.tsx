@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#e8358a",
+  themeColor: "#0F4F3C",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -28,7 +28,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="da" className={`${geist.variable} h-full antialiased`}>
-      <body className="min-h-full bg-[#141414] text-[#f5f5f5]" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+      <body className="min-h-full bg-[#0E1512] text-[#F7FAF9]" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <TopBar />
         {children}
         <ServiceWorkerRegistrar />

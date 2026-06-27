@@ -85,8 +85,8 @@ export function ServiceWorkerRegistrar() {
         display: 'flex',
         alignItems: 'center',
         gap: '12px',
-        background: '#1c1c1c',
-        border: '1px solid rgba(232,53,138,0.3)',
+        background: '#0F2318',
+        border: '1px solid rgba(82, 227, 160, 0.3)',
         borderRadius: '999px',
         padding: '10px 10px 10px 18px',
         boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
@@ -94,14 +94,14 @@ export function ServiceWorkerRegistrar() {
         animation: 'card-in 0.38s cubic-bezier(0.34,1.56,0.64,1) both',
       }}
     >
-      <span style={{ fontSize: '13px', color: '#f5f5f5' }}>
+      <span style={{ fontSize: '13px', color: '#F7FAF9' }}>
         Ny version tilgængelig
       </span>
       <button
         onClick={handleUpdate}
         style={{
-          background: '#e8358a',
-          color: 'white',
+          background: '#52E3A0',
+          color: '#0E1512',
           border: 'none',
           borderRadius: '999px',
           padding: '6px 14px',

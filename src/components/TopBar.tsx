@@ -29,23 +29,25 @@ export default function TopBar() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-40 h-14 bg-[#141414]/90 backdrop-blur-sm border-b border-[#2a2a2a] flex items-center justify-between px-4">
-        <div className="flex items-center gap-2">
-          <svg width="20" height="20" viewBox="0 0 36 36" fill="none">
-            <path d="M5 17L18 5L31 17V32H23V24H13V32H5V17Z" fill="#e8358a" />
-          </svg>
-          <h1 className="font-semibold text-[#f5f5f5] text-base tracking-tight">Boligagent</h1>
+      <header className="fixed top-0 left-0 right-0 z-40 h-14 bg-[#0E1512]/90 backdrop-blur-sm border-b border-[#1A3428] flex items-center justify-between px-4">
+        <div className="flex items-center gap-2.5">
+          <div style={{ width: 26, height: 26, borderRadius: 6, background: '#0F4F3C', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="18" height="18" viewBox="0 0 120 120" fill="none">
+              <path d="M22 54 60 20l38 34v44a4 4 0 0 1-4 4H26a4 4 0 0 1-4-4V54Z" stroke="#52E3A0" strokeWidth="11" strokeLinejoin="round"/>
+              <text x="60" y="91" textAnchor="middle" fontFamily="Sora, system-ui, sans-serif" fontWeight="800" fontSize="56" fill="white">B</text>
+            </svg>
+          </div>
+          <h1 className="font-semibold text-[#F7FAF9] text-base tracking-tight">Boligagent</h1>
         </div>
 
         <div className="flex items-center gap-1">
-          {/* Opdater nu */}
           <button
             onClick={handleRefresh}
             disabled={refreshing}
             className="flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-medium transition-all active:scale-95 disabled:opacity-60"
             style={{
-              background: newCount !== null && newCount > 0 ? "#e8358a" : "#1c1c1c",
-              color: newCount !== null && newCount > 0 ? "#fff" : "#a0a0a0",
+              background: newCount !== null && newCount > 0 ? "#52E3A0" : "#0F2318",
+              color: newCount !== null && newCount > 0 ? "#0E1512" : "#9AA7A1",
             }}
             aria-label="Opdater nu"
           >
@@ -75,7 +77,7 @@ export default function TopBar() {
 
           <button
             onClick={() => setSheetOpen(true)}
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-[#a0a0a0] hover:text-[#f5f5f5] active:scale-90 transition"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-[#9AA7A1] hover:text-[#F7FAF9] active:scale-90 transition"
             aria-label="Notifikationer"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

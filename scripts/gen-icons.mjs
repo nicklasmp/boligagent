@@ -1,40 +1,37 @@
 import { chromium } from "playwright";
 
-const bg = "#141414";
-const accent = "#e8358a";
+const bg = "#0F4F3C";
+const accent = "#52E3A0";
+const fg = "#FFFFFF";
 
 function makeHtml(size, maskable) {
-  const pad = maskable ? size * 0.1 : size * 0.05;
-  const w = size - pad * 2;
-  const cx = size / 2;
-  const roofTop = pad + w * 0.05;
-  const roofBottom = pad + w * 0.48;
-  const bodyBottom = pad + w * 0.95;
-  const bodyLeft = cx - w * 0.28;
-  const bodyRight = cx + w * 0.28;
-  const roofLeft = cx - w * 0.42;
-  const roofRight = cx + w * 0.42;
-  const doorW = w * 0.16;
-  const doorH = w * 0.26;
-  const doorX = cx - doorW / 2;
-  const doorY = bodyBottom - doorH;
-
-  const house = `M${roofLeft},${roofBottom} L${cx},${roofTop} L${roofRight},${roofBottom} L${bodyRight},${roofBottom} L${bodyRight},${bodyBottom} L${bodyLeft},${bodyBottom} L${bodyLeft},${roofBottom} Z`;
-  const door = `M${doorX},${bodyBottom} L${doorX},${doorY} Q${cx},${doorY - doorH * 0.15} ${doorX + doorW},${doorY} L${doorX + doorW},${bodyBottom} Z`;
-
-  return `<!DOCTYPE html><html><body style="margin:0;padding:0;background:${bg};width:${size}px;height:${size}px;overflow:hidden"><svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg"><rect width="${size}" height="${size}" fill="${bg}"/><path d="${house}" fill="${accent}"/><path d="${door}" fill="${bg}"/></svg></body></html>`;
+  const transform = maskable ? 'translate(12,12) scale(0.8)' : '';
+  const sw = maskable ? 11.25 : 9;
+  return `<!DOCTYPE html><html><head>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@800&display=swap" rel="stylesheet">
+<style>*{margin:0;padding:0}body{width:${size}px;height:${size}px;overflow:hidden;background:${bg}}</style>
+</head><body>
+<svg width="${size}" height="${size}" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="120" fill="${bg}"/>
+  <g${transform ? ` transform="${transform}"` : ''}>
+    <path d="M22 54 60 20l38 34v44a4 4 0 0 1-4 4H26a4 4 0 0 1-4-4V54Z" stroke="${accent}" stroke-width="${sw}" stroke-linejoin="round"/>
+    <text x="60" y="91" text-anchor="middle" font-family="'Sora', system-ui, sans-serif" font-weight="800" font-size="56" fill="${fg}">B</text>
+  </g>
+</svg>
+</body></html>`;
 }
 
 const browser = await chromium.launch();
 const icons = [
   { size: 192, maskable: false, name: "icon-192" },
   { size: 512, maskable: false, name: "icon-512" },
-  { size: 512, maskable: true, name: "icon-512-maskable" },
+  { size: 512, maskable: true,  name: "icon-512-maskable" },
 ];
 for (const { size, maskable, name } of icons) {
   const page = await browser.newPage();
   await page.setViewportSize({ width: size, height: size });
   await page.setContent(makeHtml(size, maskable));
+  await page.waitForLoadState('networkidle');
   await page.screenshot({ path: `public/icons/${name}.png`, clip: { x: 0, y: 0, width: size, height: size } });
   await page.close();
   console.log(`Generated ${name}.png`);

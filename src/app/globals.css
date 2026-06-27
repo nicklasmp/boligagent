@@ -1,12 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #141414;
-  --surface: #1c1c1c;
-  --border: #2a2a2a;
-  --accent: #e8358a;
-  --text-primary: #f5f5f5;
-  --text-secondary: #a0a0a0;
+  --bg: #0E1512;
+  --surface: #0F2318;
+  --border: #1A3428;
+  --accent: #52E3A0;
+  --primary: #0F4F3C;
+  --text-primary: #F7FAF9;
+  --text-muted: #9AA7A1;
   --font-sans: var(--font-geist-sans, system-ui, Arial, sans-serif);
 }
 
@@ -38,8 +39,8 @@ body {
 .ptr-spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(232, 53, 138, 0.2);
-  border-top-color: #e8358a;
+  border: 2px solid rgba(82, 227, 160, 0.2);
+  border-top-color: #52E3A0;
   border-radius: 50%;
   animation: ptr-spin 0.7s linear infinite;
   display: inline-block;
