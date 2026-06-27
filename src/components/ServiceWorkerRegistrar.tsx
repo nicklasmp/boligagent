@@ -79,9 +79,11 @@ export function ServiceWorkerRegistrar() {
   return (
     <div
       role="status"
-      className="fixed bottom-6 left-1/2 z-50 w-max"
+      className="fixed bottom-6 inset-x-0 z-50 flex justify-center pointer-events-none"
+    >
+    <div
       style={{
-        transform: 'translateX(-50%)',
+        pointerEvents: 'auto',
         display: 'flex',
         alignItems: 'center',
         gap: '12px',
@@ -112,6 +114,7 @@ export function ServiceWorkerRegistrar() {
       >
         Opdater nu
       </button>
+    </div>
     </div>
   )
 }
