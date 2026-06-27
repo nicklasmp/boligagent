@@ -1,0 +1,66 @@
+boligagent/
+├── .git/
+├── .next/
+├── .vercel/
+├── db/
+│   └── schema.sql
+├── node_modules/
+├── public/
+│   ├── icons/
+│   │   ├── icon-192.png
+│   │   ├── icon-512-maskable.png
+│   │   └── icon-512.png
+│   ├── manifest.json
+│   ├── sw.js
+│   ├── file.svg
+│   ├── globe.svg
+│   ├── next.svg
+│   ├── vercel.svg
+│   └── window.svg
+├── scripts/
+│   └── gen-icons.mjs
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── cron/
+│   │   │   │   └── poll/route.ts
+│   │   │   ├── image/[id]/route.ts
+│   │   │   ├── listings/[id]/route.ts
+│   │   │   ├── push/subscribe/route.ts
+│   │   │   ├── refresh/route.ts
+│   │   │   └── version/route.ts
+│   │   ├── ja-tak/page.tsx
+│   │   ├── nej-tak/page.tsx
+│   │   ├── favicon.ico
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── components/
+│   │   ├── BottomNav.tsx
+│   │   ├── FeedShell.tsx
+│   │   ├── ListingCard.tsx
+│   │   ├── NotifyButton.tsx
+│   │   ├── NotifySheet.tsx
+│   │   ├── PullToRefresh.tsx
+│   │   ├── PullToRefreshIndicator.tsx
+│   │   ├── ServiceWorkerRegistrar.tsx
+│   │   ├── TabNav.tsx
+│   │   └── TopBar.tsx
+│   └── lib/
+│       ├── boliga.ts
+│       ├── listings.ts
+│       ├── push.ts
+│       └── usePullToRefresh.ts
+├── .env.example
+├── .env.local (not committed)
+├── .gitignore
+├── AGENTS.md
+├── CLAUDE.md
+├── eslint.config.mjs
+├── next.config.ts
+├── package.json
+├── package-lock.json
+├── postcss.config.mjs
+├── README.md
+├── tsconfig.json
+└── tsconfig.tsbuildinfo
