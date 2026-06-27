@@ -156,8 +156,11 @@ export async function fetchListings(zip = ZIP): Promise<Listing[]> {
   if (!res.ok) throw new Error(`Boligsiden API ${res.status}`);
 
   const data: BoligsidenResponse = await res.json();
+  const all = data.cases ?? [];
+  const types = [...new Set(all.map((c) => c.addressType))];
+  console.log(`[boligsiden] totalHits=${data.totalHits} cases=${all.length} types=${JSON.stringify(types)}`);
 
-  return (data.cases ?? [])
+  return all
     .filter((c) => c.addressType === "terraced house")
     .map(mapCase);
 }
