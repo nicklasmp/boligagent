@@ -175,27 +175,12 @@ export async function fetchListings(
       Referer: "https://www.boliga.dk/",
     });
 
-    let apiResponseBody: string | null = null;
-    let apiStatus = 200;
-
-    page.on("response", async (res) => {
-      if (res.url().startsWith("https://api.boliga.dk/api/v2/search/results")) {
-        apiStatus = res.status();
-        apiResponseBody = await res.text().catch(() => null);
-      }
-    });
-
-    await page.goto(apiUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
-
-    if (apiResponseBody === null) {
-      await new Promise((r) => setTimeout(r, 3000));
+    const response = await page.goto(apiUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
+    if (!response || !response.ok()) {
+      throw new Error(`Boliga API ${response?.status() ?? 0}`);
     }
-
-    if (apiStatus !== 200 || apiResponseBody === null) {
-      throw new Error(`Boliga API ${apiStatus}`);
-    }
-
-    const data: BoligaResponse = JSON.parse(apiResponseBody);
+    const text = await response.text();
+    const data: BoligaResponse = JSON.parse(text);
     const base = (data.results ?? []).map(mapResult);
 
     const boligsidenMap = await fetchBoligsidenMap(zip);
