@@ -46,32 +46,40 @@ interface BoligaResponse {
   meta?: { totalCount?: number };
 }
 
+interface BoligsidenImageSource {
+  url: string;
+  size: { width: number; height: number };
+}
+
 interface BoligsidenCase {
-  roadName: string;
-  houseNumber: string;
-  zipCode: string;
-  images: { imageSources: { url: string; size: { width: number; height: number } }[] }[];
+  address: {
+    roadName: string;
+    houseNumber: string;
+    zipCode: number;
+    slugAddress: string;
+  };
+  images: { imageSources: BoligsidenImageSource[] }[];
 }
 
 interface BoligsidenResponse {
   cases: BoligsidenCase[];
+  totalHits: number;
 }
 
-export async function fetchBoligsidenImages(
-  address: string,
-  zip: string
-): Promise<string[]> {
-  // address from Boliga is typically "Vejnavn 12" — split off house number
-  const match = address.match(/^(.+?)\s+(\d+\S*)$/);
-  if (!match) return [];
-  const [, roadName, houseNumber] = match;
+function pickImageUrl(img: { imageSources: BoligsidenImageSource[] }): string {
+  return (
+    img.imageSources.find((s) => s.size.width === 600 && s.size.height === 400)?.url ??
+    img.imageSources.at(-1)?.url ??
+    ""
+  );
+}
 
+// Fetch all Boligsiden cases for a zip and return a map keyed by
+// lowercase "roadname housenumber" for O(1) lookup per listing.
+async function fetchBoligsidenMap(zip: string): Promise<Map<string, string[]>> {
   const url =
     `https://api.boligsiden.dk/search/cases` +
-    `?zipCodes=${encodeURIComponent(zip)}` +
-    `&roadName=${encodeURIComponent(roadName)}` +
-    `&houseNumber=${encodeURIComponent(houseNumber)}` +
-    `&per_page=1`;
+    `?zipCodes=${encodeURIComponent(zip)}&per_page=200&page=1`;
 
   try {
     const res = await fetch(url, {
@@ -81,21 +89,18 @@ export async function fetchBoligsidenImages(
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
       },
     });
-    if (!res.ok) return [];
+    if (!res.ok) return new Map();
     const data: BoligsidenResponse = await res.json();
-    const c = data.cases?.[0];
-    if (!c) return [];
 
-    // Pick the 600x400 variant for each image (good balance of quality vs size)
-    return (c.images ?? []).map((img) => {
-      const src =
-        img.imageSources.find((s) => s.size.width === 600 && s.size.height === 400)?.url ??
-        img.imageSources.at(-1)?.url ??
-        "";
-      return src;
-    }).filter(Boolean);
+    const map = new Map<string, string[]>();
+    for (const c of data.cases ?? []) {
+      const key = `${c.address.roadName} ${c.address.houseNumber}`.toLowerCase();
+      const urls = (c.images ?? []).map(pickImageUrl).filter(Boolean);
+      if (urls.length > 0) map.set(key, urls);
+    }
+    return map;
   } catch {
-    return [];
+    return new Map();
   }
 }
 
@@ -156,17 +161,17 @@ export async function fetchListings(
     const data: BoligaResponse = await response.json();
     const base = (data.results ?? []).map(mapResult);
 
-    // Enrich with Boligsiden images in parallel (best-effort)
-    // Falls back to Boliga's own image if Boligsiden has no match
-    const enriched = await Promise.all(
-      base.map(async (l) => {
-        let image_urls = await fetchBoligsidenImages(l.address, l.zip);
-        if (image_urls.length === 0 && l.image_url) {
-          image_urls = [l.image_url];
-        }
-        return { ...l, image_urls };
-      })
-    );
+    // Fetch Boligsiden images once for the whole zip, then match per listing
+    const boligsidenMap = await fetchBoligsidenMap(zip);
+
+    const enriched = base.map((l) => {
+      const key = l.address.toLowerCase();
+      let image_urls = boligsidenMap.get(key) ?? [];
+      if (image_urls.length === 0 && l.image_url) {
+        image_urls = [l.image_url];
+      }
+      return { ...l, image_urls };
+    });
 
     return enriched;
   } finally {
