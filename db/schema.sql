@@ -18,6 +18,7 @@ create table if not exists listings (
   sqm_price       bigint,
   url             text not null,
   image_url       text,
+  image_urls      jsonb,
   is_active       boolean not null default true,
   created_at      timestamptz not null default now(),
   boliga_created  timestamptz,
@@ -41,6 +42,9 @@ create or replace trigger listings_updated_at
   for each row execute procedure set_updated_at();
 
 -- Push subscriptions (fase 2)
+-- Migration: run if table already exists
+-- alter table listings add column if not exists image_urls jsonb;
+
 create table if not exists push_subscriptions (
   id         uuid primary key default gen_random_uuid(),
   endpoint   text not null unique,

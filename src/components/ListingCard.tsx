@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { ListingRow, ListingStatus } from "@/lib/listings";
@@ -31,7 +31,6 @@ function formatPrice(p: number | null) {
 
 function fixImageUrl(url: string | null) {
   if (!url) return null;
-  // Old records used non-existent i.boliga.dk — reconstruct correct URL from the ID
   const old = url.match(/i\.boliga\.dk\/\S+?\/(\d+)\.jpg/);
   if (old) {
     const id = old[1];
@@ -44,6 +43,115 @@ function isNew(createdAt: string) {
   return Date.now() - new Date(createdAt).getTime() < 72 * 60 * 60 * 1000;
 }
 
+function ImageSlider({ images, address }: { images: string[]; address: string }) {
+  const [index, setIndex] = useState(0);
+  const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
+  const touchStartX = useRef<number | null>(null);
+
+  const validImages = images.filter((_, i) => !imgErrors[i]);
+  const effectiveIndex = Math.min(index, Math.max(validImages.length - 1, 0));
+
+  function prev() {
+    setIndex((i) => (i - 1 + validImages.length) % validImages.length);
+  }
+  function next() {
+    setIndex((i) => (i + 1) % validImages.length);
+  }
+
+  function onTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+  }
+  function onTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(dx) > 40) dx < 0 ? next() : prev();
+    touchStartX.current = null;
+  }
+
+  if (validImages.length === 0) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center">
+        <svg width="48" height="48" viewBox="0 0 36 36" fill="none" opacity="0.2">
+          <path d="M5 17L18 5L31 17V32H23V24H13V32H5V17Z" fill="#e8358a" />
+        </svg>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="absolute inset-0"
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
+      {validImages.map((src, i) => (
+        <div
+          key={src}
+          className="absolute inset-0 transition-opacity duration-300"
+          style={{ opacity: i === effectiveIndex ? 1 : 0, pointerEvents: i === effectiveIndex ? "auto" : "none" }}
+        >
+          <Image
+            src={src}
+            alt={`${address} — billede ${i + 1}`}
+            fill
+            sizes="(max-width: 640px) 100vw, 640px"
+            className="object-cover"
+            onError={() => {
+              const originalIndex = images.indexOf(src);
+              setImgErrors((prev) => ({ ...prev, [originalIndex]: true }));
+            }}
+          />
+        </div>
+      ))}
+
+      {/* Prev/Next arrows — only show if more than 1 image */}
+      {validImages.length > 1 && (
+        <>
+          <button
+            onClick={(e) => { e.stopPropagation(); prev(); }}
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 flex items-center justify-center text-white backdrop-blur-sm hover:bg-black/70 transition"
+            aria-label="Forrige billede"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); next(); }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 flex items-center justify-center text-white backdrop-blur-sm hover:bg-black/70 transition"
+            aria-label="Næste billede"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+
+          {/* Dot indicators */}
+          <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
+            {validImages.map((_, i) => (
+              <button
+                key={i}
+                onClick={(e) => { e.stopPropagation(); setIndex(i); }}
+                className="w-1.5 h-1.5 rounded-full transition-all"
+                style={{
+                  background: i === effectiveIndex ? "#fff" : "rgba(255,255,255,0.4)",
+                  transform: i === effectiveIndex ? "scale(1.25)" : "scale(1)",
+                }}
+                aria-label={`Billede ${i + 1}`}
+              />
+            ))}
+          </div>
+
+          {/* Counter */}
+          <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-black/50 text-white text-[10px] font-medium backdrop-blur-sm">
+            {effectiveIndex + 1}/{validImages.length}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 interface Props {
   listing: ListingRow;
   tab: ListingStatus;
@@ -53,8 +161,12 @@ interface Props {
 export default function ListingCard({ listing, tab, index }: Props) {
   const router = useRouter();
   const [visible, setVisible] = useState(true);
-  const [imgError, setImgError] = useState(false);
-  const imageSrc = fixImageUrl(listing.image_url);
+
+  // Build image list: prefer Boligsiden images, fall back to Boliga single image
+  const images: string[] =
+    listing.image_urls && listing.image_urls.length > 0
+      ? listing.image_urls
+      : [fixImageUrl(listing.image_url)].filter(Boolean) as string[];
 
   async function act(status: ListingStatus) {
     setVisible(false);
@@ -83,26 +195,11 @@ export default function ListingCard({ listing, tab, index }: Props) {
         transition: "opacity 220ms ease, transform 220ms ease",
       }}
     >
-      {/* Image */}
-      <div className="relative w-full h-44 bg-[#232323]">
-        {imageSrc && !imgError ? (
-          <Image
-            src={imageSrc}
-            alt={listing.address}
-            fill
-            sizes="(max-width: 640px) 100vw, 640px"
-            className="object-cover"
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <svg width="48" height="48" viewBox="0 0 36 36" fill="none" opacity="0.2">
-              <path d="M5 17L18 5L31 17V32H23V24H13V32H5V17Z" fill="#e8358a" />
-            </svg>
-          </div>
-        )}
+      {/* Image slider */}
+      <div className="relative w-full h-48 bg-[#232323]">
+        <ImageSlider images={images} address={listing.address} />
         {isNew(listing.created_at) && (
-          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider bg-[#e8358a] text-white uppercase">
+          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider bg-[#e8358a] text-white uppercase z-10">
             Ny
           </span>
         )}

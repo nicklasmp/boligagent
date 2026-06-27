@@ -20,6 +20,7 @@ export interface Listing {
   boliga_created: string | null;
   url: string;
   image_url: string | null;
+  image_urls: string[];
 }
 
 interface BoligaResult {
@@ -45,7 +46,60 @@ interface BoligaResponse {
   meta?: { totalCount?: number };
 }
 
-function mapResult(r: BoligaResult): Listing {
+interface BoligsidenCase {
+  roadName: string;
+  houseNumber: string;
+  zipCode: string;
+  images: { imageSources: { url: string; size: { width: number; height: number } }[] }[];
+}
+
+interface BoligsidenResponse {
+  cases: BoligsidenCase[];
+}
+
+export async function fetchBoligsidenImages(
+  address: string,
+  zip: string
+): Promise<string[]> {
+  // address from Boliga is typically "Vejnavn 12" — split off house number
+  const match = address.match(/^(.+?)\s+(\d+\S*)$/);
+  if (!match) return [];
+  const [, roadName, houseNumber] = match;
+
+  const url =
+    `https://api.boligsiden.dk/search/cases` +
+    `?zipCodes=${encodeURIComponent(zip)}` +
+    `&roadName=${encodeURIComponent(roadName)}` +
+    `&houseNumber=${encodeURIComponent(houseNumber)}` +
+    `&per_page=1`;
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+      },
+    });
+    if (!res.ok) return [];
+    const data: BoligsidenResponse = await res.json();
+    const c = data.cases?.[0];
+    if (!c) return [];
+
+    // Pick the 600x400 variant for each image (good balance of quality vs size)
+    return (c.images ?? []).map((img) => {
+      const src =
+        img.imageSources.find((s) => s.size.width === 600 && s.size.height === 400)?.url ??
+        img.imageSources.at(-1)?.url ??
+        "";
+      return src;
+    }).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function mapResult(r: BoligaResult): Omit<Listing, "image_urls"> {
   return {
     boliga_id: r.id,
     address: r.street,
@@ -100,7 +154,17 @@ export async function fetchListings(
     }
 
     const data: BoligaResponse = await response.json();
-    return (data.results ?? []).map(mapResult);
+    const base = (data.results ?? []).map(mapResult);
+
+    // Enrich with Boligsiden images in parallel (best-effort)
+    const enriched = await Promise.all(
+      base.map(async (l) => {
+        const image_urls = await fetchBoligsidenImages(l.address, l.zip);
+        return { ...l, image_urls };
+      })
+    );
+
+    return enriched;
   } finally {
     await browser.close();
   }

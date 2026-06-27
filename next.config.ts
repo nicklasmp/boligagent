@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "i.boliga.org" },
+      { protocol: "https", hostname: "images.boligsiden.dk" },
     ],
   },
   env: {
