@@ -218,7 +218,92 @@ export default function ListingCard({ listing, tab, index }: Props) {
             Ny
           </span>
         )}
+        {mapUrl && (
+          <button
+            onClick={() => setMapOpen(true)}
+            className="absolute bottom-3 right-3 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-sm transition-opacity active:opacity-70"
+            style={{ background: "rgba(0,0,0,0.45)", color: "white" }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
+              <line x1="9" y1="3" x2="9" y2="18" />
+              <line x1="15" y1="6" x2="15" y2="21" />
+            </svg>
+            <span className="text-[12px] font-medium">Kort</span>
+          </button>
+        )}
       </div>
+
+      {/* Map bottom sheet */}
+      {mapOpen && mapUrl && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+          <div
+            className="absolute inset-0"
+            style={{ background: "rgba(0,0,0,0.5)" }}
+            onClick={() => setMapOpen(false)}
+          />
+          <div
+            className="relative w-full flex flex-col"
+            style={{
+              background: "white",
+              borderRadius: "20px 20px 0 0",
+              height: "80vh",
+              paddingBottom: "env(safe-area-inset-bottom)",
+            }}
+          >
+            {/* Handle */}
+            <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+              <div className="w-9 h-1 rounded-full" style={{ background: "#DCE5E1" }} />
+            </div>
+
+            {/* Header */}
+            <div className="flex items-start justify-between px-4 py-3 border-b flex-shrink-0" style={{ borderColor: "#F0F5F3" }}>
+              <div>
+                <p className="font-semibold text-[#0E1512] text-[15px] leading-snug">{listing.address}</p>
+                <p className="text-[13px] text-[#9AA7A1] mt-0.5">
+                  {listing.neighborhood ? `${listing.neighborhood}, ` : ""}{listing.zip} {listing.city}
+                </p>
+              </div>
+              <button
+                onClick={() => setMapOpen(false)}
+                className="ml-3 mt-0.5 w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: "#F0F5F3", color: "#6B7A74" }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Map */}
+            <div className="flex-1 overflow-hidden">
+              <iframe
+                src={mapUrl}
+                width="100%"
+                height="100%"
+                style={{ border: 0, display: "block" }}
+                title={`Kort over ${listing.address}`}
+              />
+            </div>
+
+            {/* Footer */}
+            <div className="flex-shrink-0 px-4 py-3 border-t" style={{ borderColor: "#F0F5F3" }}>
+              <a
+                href={mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full h-11 rounded-xl text-[13px] font-medium transition-colors"
+                style={{ background: "#F0F5F3", color: "#0E1512" }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                </svg>
+                Åbn i Apple Maps
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div className="px-4 pt-4 pb-4 flex flex-col gap-3">
@@ -231,7 +316,7 @@ export default function ListingCard({ listing, tab, index }: Props) {
           <p className="text-[15px] font-medium text-[#0E1512] mt-1.5 leading-snug">
             {listing.address}
           </p>
-          <div className="flex items-center gap-1 mt-1 flex-wrap">
+          <div className="flex items-center gap-1 mt-1">
             <span className="text-[#9AA7A1]"><IconPin /></span>
             <a
               href={mapsUrl}
@@ -248,34 +333,7 @@ export default function ListingCard({ listing, tab, index }: Props) {
                 &nbsp;·&nbsp;{listing.days_on_market === 0 ? "Ny i dag" : `${listing.days_on_market} dage til salg`}
               </span>
             )}
-            {mapUrl && (
-              <button
-                onClick={() => setMapOpen((o) => !o)}
-                className="ml-auto text-[12px] font-medium transition-colors flex items-center gap-1"
-                style={{ color: mapOpen ? "#0F4F3C" : "#9AA7A1" }}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
-                  <line x1="9" y1="3" x2="9" y2="18" />
-                  <line x1="15" y1="6" x2="15" y2="21" />
-                </svg>
-                {mapOpen ? "Skjul kort" : "Vis kort"}
-              </button>
-            )}
           </div>
-
-          {mapOpen && mapUrl && (
-            <div className="rounded-xl overflow-hidden border border-[#DCE5E1]" style={{ height: 200 }}>
-              <iframe
-                src={mapUrl}
-                width="100%"
-                height="200"
-                style={{ border: 0 }}
-                loading="lazy"
-                title={`Kort over ${listing.address}`}
-              />
-            </div>
-          )}
         </div>
 
         {/* Stats grid */}
