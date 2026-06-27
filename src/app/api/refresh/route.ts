@@ -2,18 +2,23 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { fetchListings } from "@/lib/boliga";
+import { mapBoligaResponse, fetchBoligsidenMap } from "@/lib/boliga";
 import { sendToAll } from "@/lib/push";
 
-export async function POST() {
+// Called by the PWA pull-to-refresh: client fetches Boliga (residential IP)
+// and posts the raw response body here for processing.
+export async function POST(req: NextRequest) {
   const supabase = createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const listings = await fetchListings();
+  const rawData = await req.json();
+  const zip = process.env.BOLIGA_ZIP ?? "5800";
+  const boligsidenMap = await fetchBoligsidenMap(zip);
+  const listings = mapBoligaResponse(rawData, boligsidenMap);
 
   const { data: existing, error } = await supabase
     .from("listings")
@@ -51,7 +56,6 @@ export async function POST() {
     );
   }
 
-  // Backfill image_urls for existing listings that are missing them
   if (toBackfill.length > 0) {
     await Promise.allSettled(
       toBackfill.map((l) =>

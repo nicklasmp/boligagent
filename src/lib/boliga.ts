@@ -154,66 +154,14 @@ function mapResult(r: BoligaResult): Omit<Listing, "image_urls" | "neighborhood"
   };
 }
 
-export async function fetchListings(
-  propertyType = PROPERTY_TYPE,
-  zip = ZIP
-): Promise<Listing[]> {
-  const apiUrl =
-    `https://api.boliga.dk/api/v2/search/results` +
-    `?propertyType=${propertyType}&zipCodes=${zip}&pageSize=100&page=1&sort=daysForSale-asc`;
-
-  const chromiumMod = await import("@sparticuz/chromium");
-  const { default: puppeteer } = await import("puppeteer-core");
-
-  const isLocal = process.env.NODE_ENV === "development";
-  const executablePath = isLocal
-    ? undefined
-    : await chromiumMod.default.executablePath();
-
-  const browser = await puppeteer.launch({
-    args: chromiumMod.default.args,
-    executablePath,
-    headless: chromiumMod.default.headless,
+// Called by the POST handler with raw Boliga API JSON (fetched by GitHub Actions)
+export function mapBoligaResponse(raw: unknown, boligsidenMap: Map<string, string[]>): Listing[] {
+  const data = raw as BoligaResponse;
+  return (data.results ?? []).map((r) => {
+    const base = mapResult(r);
+    const key = base.address.toLowerCase();
+    let image_urls = boligsidenMap.get(key) ?? [];
+    if (image_urls.length === 0 && base.image_url) image_urls = [base.image_url];
+    return { ...base, image_urls, neighborhood: null, lat: null, lon: null };
   });
-
-  try {
-    const page = await browser.newPage();
-    await page.setUserAgent(
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
-    );
-
-    // Visit homepage first to get Cloudflare cookies, then fetch API from within browser context
-    await page.goto("https://www.boliga.dk/", { waitUntil: "domcontentloaded", timeout: 30000 });
-
-    const result = await page.evaluate(async (url: string) => {
-      const res = await fetch(url, {
-        headers: {
-          Accept: "application/json, text/plain, */*",
-          "Accept-Language": "da-DK,da;q=0.9,en;q=0.8",
-        },
-      });
-      if (!res.ok) return { ok: false, status: res.status, body: null };
-      const body = await res.text();
-      return { ok: true, status: res.status, body };
-    }, apiUrl);
-
-    if (!result.ok || !result.body) {
-      throw new Error(`Boliga API ${result.status}`);
-    }
-    const data: BoligaResponse = JSON.parse(result.body);
-    const base = (data.results ?? []).map(mapResult);
-
-    const boligsidenMap = await fetchBoligsidenMap(zip);
-
-    return base.map((l) => {
-      const key = l.address.toLowerCase();
-      let image_urls = boligsidenMap.get(key) ?? [];
-      if (image_urls.length === 0 && l.image_url) {
-        image_urls = [l.image_url];
-      }
-      return { ...l, image_urls, neighborhood: null, lat: null, lon: null };
-    });
-  } finally {
-    await browser.close();
-  }
 }

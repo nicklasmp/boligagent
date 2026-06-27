@@ -1,0 +1,29 @@
+name: Poll Boliga
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Boliga listings and forward to Vercel
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          DATA=$(curl -sf \
+            -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36" \
+            -H "Accept: application/json, text/plain, */*" \
+            -H "Accept-Language: da-DK,da;q=0.9,en;q=0.8" \
+            -H "Referer: https://www.boliga.dk/" \
+            "https://api.boliga.dk/api/v2/search/results?propertyType=2&zipCodes=5800&pageSize=100&page=1&sort=daysForSale-asc")
+
+          echo "Boliga response (first 200 chars): ${DATA:0:200}"
+
+          curl -sf -X POST \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: $CRON_SECRET" \
+            -d "$DATA" \
+            https://boligagent.vercel.app/api/cron/poll

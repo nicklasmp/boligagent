@@ -3,34 +3,28 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { fetchListings, fetchNeighborhood } from "@/lib/boliga";
+import { mapBoligaResponse, fetchBoligsidenMap, fetchNeighborhood } from "@/lib/boliga";
 import webpush from "web-push";
 
-export async function GET(req: NextRequest) {
+function auth(req: NextRequest) {
+  return req.headers.get("x-cron-secret") === process.env.CRON_SECRET;
+}
+
+async function processListings(rawData: unknown) {
   const supabase = createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
-  const secret = req.headers.get("x-cron-secret");
-  if (secret !== process.env.CRON_SECRET) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
 
-  let listings;
-  try {
-    listings = await fetchListings();
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: "fetchListings failed", detail: msg }, { status: 500 });
-  }
+  const zip = process.env.BOLIGA_ZIP ?? "5800";
+  const boligsidenMap = await fetchBoligsidenMap(zip);
+  const listings = mapBoligaResponse(rawData, boligsidenMap);
 
   const { data: existing, error } = await supabase
     .from("listings")
     .select("boliga_id, image_urls");
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  if (error) throw new Error(error.message);
 
   const existingMap = new Map(
     (existing ?? []).map((r) => [r.boliga_id, r.image_urls])
@@ -51,11 +45,8 @@ export async function GET(req: NextRequest) {
     }
 
     const { error: insertError } = await supabase.from("listings").insert(withNeighborhoods);
-    if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
-    }
+    if (insertError) throw new Error(insertError.message);
 
-    // Send push til alle brugere med gemte subscriptions
     const { data: prefs } = await supabase
       .from("user_preferences")
       .select("push_subscription")
@@ -84,11 +75,7 @@ export async function GET(req: NextRequest) {
             );
           } catch (err: unknown) {
             const status = (err as { statusCode?: number }).statusCode;
-            if (status === 404 || status === 410) {
-              console.log("[push] Expired subscription, skipping");
-            } else {
-              console.error("[push] Failed:", err);
-            }
+            if (status !== 404 && status !== 410) console.error("[push] Failed:", err);
           }
         })
       );
@@ -98,18 +85,32 @@ export async function GET(req: NextRequest) {
   if (toBackfill.length > 0) {
     await Promise.allSettled(
       toBackfill.map((l) =>
-        supabase
-          .from("listings")
-          .update({ image_urls: l.image_urls })
-          .eq("boliga_id", l.boliga_id)
+        supabase.from("listings").update({ image_urls: l.image_urls }).eq("boliga_id", l.boliga_id)
       )
     );
   }
 
-  return NextResponse.json({
-    checked: listings.length,
-    new: newListings.length,
-    backfilled: toBackfill.length,
-    addresses: newListings.map((l) => l.address),
-  });
+  return { checked: listings.length, new: newListings.length, backfilled: toBackfill.length };
+}
+
+// POST: called by GitHub Actions with raw Boliga API response body
+export async function POST(req: NextRequest) {
+  if (!auth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const rawData = await req.json();
+    const result = await processListings(rawData);
+    return NextResponse.json(result);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}
+
+// GET: kept for manual triggers (fetches Boliga directly — only works from non-blocked IPs)
+export async function GET(req: NextRequest) {
+  if (!auth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  return NextResponse.json(
+    { error: "Use POST with Boliga API data, or trigger via GitHub Actions" },
+    { status: 405 }
+  );
 }
