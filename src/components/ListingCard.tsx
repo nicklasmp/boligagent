@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { ListingRow, ListingStatus } from "@/lib/listings";
@@ -39,8 +39,19 @@ function fixImageUrl(url: string | null) {
   return url;
 }
 
-function isNew(createdAt: string) {
-  return Date.now() - new Date(createdAt).getTime() < 72 * 60 * 60 * 1000;
+const CUTOFF_KEY = 'boligagent_cutoff';
+
+function useIsNew(createdAt: string) {
+  const [isNew, setIsNew] = useState(false);
+  useEffect(() => {
+    let cutoff = localStorage.getItem(CUTOFF_KEY);
+    if (!cutoff) {
+      cutoff = new Date().toISOString();
+      localStorage.setItem(CUTOFF_KEY, cutoff);
+    }
+    setIsNew(new Date(createdAt).getTime() > new Date(cutoff).getTime());
+  }, [createdAt]);
+  return isNew;
 }
 
 function ImageSlider({ images, address }: { images: string[]; address: string }) {
@@ -158,6 +169,7 @@ interface Props {
 export default function ListingCard({ listing, tab, index }: Props) {
   const router = useRouter();
   const [visible, setVisible] = useState(true);
+  const isNew = useIsNew(listing.created_at);
 
   const images: string[] =
     listing.image_urls && listing.image_urls.length > 0
@@ -194,7 +206,7 @@ export default function ListingCard({ listing, tab, index }: Props) {
     >
       <div className="relative w-full h-48 bg-[#EDF2F0]">
         <ImageSlider images={images} address={listing.address} />
-        {isNew(listing.created_at) && (
+        {isNew && (
           <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider bg-[#52E3A0] text-[#0E1512] uppercase z-10">
             Ny
           </span>
