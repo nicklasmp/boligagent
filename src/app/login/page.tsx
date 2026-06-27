@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-
-const USERS = ["Mor", "Far"];
 
 function PinDots({ length }: { length: number }) {
   return (
@@ -50,11 +48,19 @@ function NumPad({ onDigit, onDelete }: { onDigit: (d: string) => void; onDelete:
 
 export default function LoginPage() {
   const router = useRouter();
+  const [users, setUsers] = useState<string[]>([]);
   const [step, setStep] = useState<"pick" | "pin">("pick");
   const [selectedUser, setSelectedUser] = useState("");
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/users")
+      .then((r) => r.json())
+      .then(setUsers)
+      .catch(() => {});
+  }, []);
 
   function pickUser(name: string) {
     setSelectedUser(name);
@@ -117,16 +123,22 @@ export default function LoginPage() {
         <div className="flex flex-col items-center gap-6 w-full max-w-xs">
           <p className="text-[#6B7A74] text-base">Hvem er du?</p>
           <div className="flex flex-col gap-3 w-full">
-            {USERS.map((name) => (
-              <button
-                key={name}
-                onClick={() => pickUser(name)}
-                className="w-full h-16 rounded-2xl text-lg font-semibold transition-colors"
-                style={{ background: "#0F4F3C", color: "white" }}
-              >
-                {name}
-              </button>
-            ))}
+            {users.length === 0 ? (
+              <div className="h-16 flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-[#DCE5E1] border-t-[#0F4F3C] rounded-full animate-spin" />
+              </div>
+            ) : (
+              users.map((name) => (
+                <button
+                  key={name}
+                  onClick={() => pickUser(name)}
+                  className="w-full h-16 rounded-2xl text-lg font-semibold transition-colors"
+                  style={{ background: "#0F4F3C", color: "white" }}
+                >
+                  {name}
+                </button>
+              ))
+            )}
           </div>
         </div>
       )}
