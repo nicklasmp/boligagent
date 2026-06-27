@@ -3,49 +3,44 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { mapBoligaResponse, fetchBoligsidenMap, fetchNeighborhood } from "@/lib/boliga";
+import { fetchListings } from "@/lib/boliga";
 import webpush from "web-push";
 
 function auth(req: NextRequest) {
   return req.headers.get("x-cron-secret") === process.env.CRON_SECRET;
 }
 
-async function processListings(rawData: unknown) {
+export async function GET(req: NextRequest) {
+  if (!auth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const supabase = createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const zip = process.env.BOLIGA_ZIP ?? "5800";
-  const boligsidenMap = await fetchBoligsidenMap(zip);
-  const listings = mapBoligaResponse(rawData, boligsidenMap);
+  let listings;
+  try {
+    listings = await fetchListings();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 
   const { data: existing, error } = await supabase
     .from("listings")
-    .select("boliga_id, image_urls");
+    .select("boliga_id");
 
-  if (error) throw new Error(error.message);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const existingMap = new Map(
-    (existing ?? []).map((r) => [r.boliga_id, r.image_urls])
-  );
-
-  const newListings = listings.filter((l) => !existingMap.has(l.boliga_id));
-  const toBackfill = listings.filter(
-    (l) => existingMap.has(l.boliga_id) && !existingMap.get(l.boliga_id) && l.image_urls.length > 0
-  );
+  const existingIds = new Set((existing ?? []).map((r) => r.boliga_id));
+  const newListings = listings.filter((l) => !existingIds.has(l.boliga_id));
 
   if (newListings.length > 0) {
-    const withNeighborhoods = [];
-    for (let i = 0; i < newListings.length; i++) {
-      const l = newListings[i];
-      const { neighborhood, lat, lon } = await fetchNeighborhood(l.address, l.zip, l.city);
-      withNeighborhoods.push({ ...l, neighborhood, lat, lon, status: "new" });
-      if (i < newListings.length - 1) await new Promise((r) => setTimeout(r, 1100));
-    }
+    const { error: insertError } = await supabase
+      .from("listings")
+      .insert(newListings.map((l) => ({ ...l, status: "new" })));
 
-    const { error: insertError } = await supabase.from("listings").insert(withNeighborhoods);
-    if (insertError) throw new Error(insertError.message);
+    if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 });
 
     const { data: prefs } = await supabase
       .from("user_preferences")
@@ -60,17 +55,16 @@ async function processListings(rawData: unknown) {
       );
 
       const payload = JSON.stringify({
-        title: `${newListings.length === 1 ? "Nyt rækkehus" : `${newListings.length} nye rækkehuse`} i 5800`,
+        title: `${newListings.length === 1 ? "Nyt rækkehus" : `${newListings.length} nye rækkehuse`} i ${process.env.BOLIGA_ZIP ?? "5800"}`,
         body: newListings[0].address,
         url: newListings[0].url,
       });
 
       await Promise.allSettled(
         prefs.map(async (pref) => {
-          const sub = pref.push_subscription;
           try {
             await webpush.sendNotification(
-              { endpoint: sub.endpoint, keys: sub.keys },
+              { endpoint: pref.push_subscription.endpoint, keys: pref.push_subscription.keys },
               payload
             );
           } catch (err: unknown) {
@@ -82,35 +76,9 @@ async function processListings(rawData: unknown) {
     }
   }
 
-  if (toBackfill.length > 0) {
-    await Promise.allSettled(
-      toBackfill.map((l) =>
-        supabase.from("listings").update({ image_urls: l.image_urls }).eq("boliga_id", l.boliga_id)
-      )
-    );
-  }
-
-  return { checked: listings.length, new: newListings.length, backfilled: toBackfill.length };
-}
-
-// POST: called by GitHub Actions with raw Boliga API response body
-export async function POST(req: NextRequest) {
-  if (!auth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  try {
-    const rawData = await req.json();
-    const result = await processListings(rawData);
-    return NextResponse.json(result);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg }, { status: 500 });
-  }
-}
-
-// GET: kept for manual triggers (fetches Boliga directly — only works from non-blocked IPs)
-export async function GET(req: NextRequest) {
-  if (!auth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  return NextResponse.json(
-    { error: "Use POST with Boliga API data, or trigger via GitHub Actions" },
-    { status: 405 }
-  );
+  return NextResponse.json({
+    checked: listings.length,
+    new: newListings.length,
+    addresses: newListings.map((l) => l.address),
+  });
 }

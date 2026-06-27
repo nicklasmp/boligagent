@@ -8,8 +8,7 @@ export default function FeedShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
 
   async function handleRefresh() {
-    // Backfill any listings missing image_urls (fast — no Playwright)
-    await fetch('/api/backfill-images', { method: 'POST' }).catch(() => {})
+    await fetch('/api/refresh', { method: 'POST' }).catch(() => {})
     router.refresh()
   }
 
