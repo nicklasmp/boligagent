@@ -173,7 +173,7 @@ export async function fetchListings(
   const browser = await puppeteer.launch({
     args: chromiumMod.default.args,
     executablePath,
-    headless: true,
+    headless: chromiumMod.default.headless,
   });
 
   try {
