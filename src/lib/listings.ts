@@ -9,9 +9,12 @@ export interface ListingRow {
   city: string;
   price: number | null;
   sqm: number | null;
+  lot_size: number | null;
   rooms: number | null;
+  build_year: number | null;
   energy_class: string | null;
   days_on_market: number | null;
+  sqm_price: number | null;
   url: string;
   image_url: string | null;
   image_urls: string[] | null;
@@ -30,7 +33,7 @@ export async function getListings(status: ListingStatus): Promise<ListingRow[]> 
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from("listings")
-    .select("boliga_id,address,zip,city,price,sqm,rooms,energy_class,days_on_market,url,image_url,image_urls,status,created_at")
+    .select("boliga_id,address,zip,city,price,sqm,lot_size,rooms,build_year,energy_class,days_on_market,sqm_price,url,image_url,image_urls,status,created_at")
     .eq("status", status)
     .order("days_on_market", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: false });
