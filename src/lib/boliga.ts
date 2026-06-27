@@ -150,48 +150,52 @@ export async function fetchListings(
     `https://api.boliga.dk/api/v2/search/results` +
     `?propertyType=${propertyType}&zipCodes=${zip}&pageSize=100&page=1&sort=daysForSale-asc`;
 
-  const isLocal = process.env.NODE_ENV === "development";
+  const chromiumMod = await import("@sparticuz/chromium");
+  const { default: puppeteer } = await import("puppeteer-core");
 
-  let browser;
-  if (isLocal) {
-    const { chromium: pw } = await import("playwright-core");
-    browser = await pw.launch({ headless: true });
-  } else {
-    const chromiumMod = await import("@sparticuz/chromium");
-    const { chromium: pw } = await import("playwright-core");
-    const executablePath = await chromiumMod.default.executablePath();
-    browser = await pw.launch({
-      args: chromiumMod.default.args,
-      executablePath,
-      headless: true,
-    });
-  }
+  const isLocal = process.env.NODE_ENV === "development";
+  const executablePath = isLocal
+    ? undefined
+    : await chromiumMod.default.executablePath();
+
+  const browser = await puppeteer.launch({
+    args: chromiumMod.default.args,
+    executablePath,
+    headless: true,
+  });
 
   try {
-    const context = await browser.newContext({
-      userAgent:
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-      locale: "da-DK",
-      extraHTTPHeaders: {
-        Accept: "application/json, text/plain, */*",
-        "Accept-Language": "da-DK,da;q=0.9,en;q=0.8",
-        Referer: "https://www.boliga.dk/",
-      },
-    });
-    const page = await context.newPage();
-
-    const responsePromise = page.waitForResponse(
-      (r) => r.url().startsWith("https://api.boliga.dk/api/v2/search/results"),
-      { timeout: 30000 }
+    const page = await browser.newPage();
+    await page.setUserAgent(
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
     );
-    await page.goto(apiUrl, { waitUntil: "commit" });
-    const response = await responsePromise;
+    await page.setExtraHTTPHeaders({
+      Accept: "application/json, text/plain, */*",
+      "Accept-Language": "da-DK,da;q=0.9,en;q=0.8",
+      Referer: "https://www.boliga.dk/",
+    });
 
-    if (!response.ok()) {
-      throw new Error(`Boliga API ${response.status()}`);
+    let apiResponseBody: string | null = null;
+    let apiStatus = 200;
+
+    page.on("response", async (res) => {
+      if (res.url().startsWith("https://api.boliga.dk/api/v2/search/results")) {
+        apiStatus = res.status();
+        apiResponseBody = await res.text().catch(() => null);
+      }
+    });
+
+    await page.goto(apiUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
+
+    if (apiResponseBody === null) {
+      await new Promise((r) => setTimeout(r, 3000));
     }
 
-    const data: BoligaResponse = await response.json();
+    if (apiStatus !== 200 || apiResponseBody === null) {
+      throw new Error(`Boliga API ${apiStatus}`);
+    }
+
+    const data: BoligaResponse = JSON.parse(apiResponseBody);
     const base = (data.results ?? []).map(mapResult);
 
     const boligsidenMap = await fetchBoligsidenMap(zip);
