@@ -11,8 +11,19 @@ function getSupabase() {
 }
 
 export const SESSION_COOKIE = "ba_session";
+export const SESSION_EXP_COOKIE = "ba_session_exp";
 export const REAL_SESSION_COOKIE = "ba_real_session";
-const SESSION_DAYS = 90;
+export const SESSION_DAYS = 90;
+
+export function sessionCookieOpts(maxAge = SESSION_DAYS * 86400) {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    maxAge,
+    path: "/",
+  };
+}
 
 function generateToken(): string {
   const arr = new Uint8Array(32);
@@ -107,4 +118,3 @@ export const getSessionMeta = cache(async (): Promise<{
   return { id: activeUser.id, name: activeUser.name, isAdmin, isImpersonating };
 });
 
-export { SESSION_DAYS };

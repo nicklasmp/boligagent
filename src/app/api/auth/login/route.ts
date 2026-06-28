@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { loginWithPin, SESSION_COOKIE, SESSION_DAYS } from "@/lib/auth";
+import { loginWithPin, SESSION_COOKIE, SESSION_EXP_COOKIE, sessionCookieOpts } from "@/lib/auth";
 import { logEvent } from "@/lib/track";
 
 export async function POST(req: NextRequest) {
@@ -18,14 +18,11 @@ export async function POST(req: NextRequest) {
 
   logEvent(result.userId, "session_start", { name }).catch(() => {});
 
+  const opts = sessionCookieOpts();
+  const expiresAt = new Date(Date.now() + opts.maxAge * 1000).toISOString();
   const res = NextResponse.json({ ok: true });
-  res.cookies.set(SESSION_COOKIE, result.token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * SESSION_DAYS,
-    path: "/",
-  });
+  res.cookies.set(SESSION_COOKIE, result.token, opts);
+  res.cookies.set(SESSION_EXP_COOKIE, expiresAt, opts);
 
   return res;
 }

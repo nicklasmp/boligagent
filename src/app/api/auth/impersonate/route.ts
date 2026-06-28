@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
-import { SESSION_COOKIE, REAL_SESSION_COOKIE, SESSION_DAYS, getSessionMeta } from "@/lib/auth";
+import { SESSION_COOKIE, SESSION_EXP_COOKIE, REAL_SESSION_COOKIE, SESSION_DAYS, sessionCookieOpts, getSessionMeta } from "@/lib/auth";
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const COOKIE_OPTS = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax" as const,
-  maxAge: 60 * 60 * 24 * SESSION_DAYS,
-  path: "/",
-};
+const COOKIE_OPTS = sessionCookieOpts();
 
 function generateToken(): string {
   const arr = new Uint8Array(32);
@@ -42,6 +36,7 @@ export async function POST(req: NextRequest) {
     if (activeToken) await supabase.from("sessions").delete().eq("token", activeToken);
 
     res.cookies.set(SESSION_COOKIE, realToken, COOKIE_OPTS);
+    res.cookies.delete(SESSION_EXP_COOKIE);
     res.cookies.delete(REAL_SESSION_COOKIE);
     return res;
   }
