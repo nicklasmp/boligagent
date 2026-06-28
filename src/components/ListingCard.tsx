@@ -607,13 +607,15 @@ export default function ListingCard({ listing, tab, index }: Props) {
               >
                 Fortryd
               </button>
-              <button
-                onClick={() => act(tab === "liked" ? "disliked" : "liked")}
-                disabled={acting}
-                className="h-8 px-3.5 rounded-full border border-[#DCE5E1] text-[12px] font-medium text-[#6B7A74] hover:border-[#B0BDB8] hover:text-[#0E1512] active:scale-[0.97] transition-all disabled:opacity-40"
-              >
-                {tab === "liked" ? "Ikke interesseret" : "Gem bolig"}
-              </button>
+              {tab === "liked" && (
+                <button
+                  onClick={() => act("disliked")}
+                  disabled={acting}
+                  className="h-8 px-3.5 rounded-full border border-[#DCE5E1] text-[12px] font-medium text-[#6B7A74] hover:border-[#B0BDB8] hover:text-[#0E1512] active:scale-[0.97] transition-all disabled:opacity-40"
+                >
+                  Ikke interesseret
+                </button>
+              )}
             </div>
           </div>
         )}
