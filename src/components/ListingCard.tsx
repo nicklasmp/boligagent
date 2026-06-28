@@ -128,7 +128,6 @@ function ImageSlider({ images, address }: { images: string[]; address: string })
             </svg>
           </button>
 
-          {/* Counter bottom-left — kort-knap sidder bottom-right */}
           <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full text-white text-[11px] font-semibold backdrop-blur-sm tracking-wide flex items-center gap-1" style={{ background: "rgba(0,0,0,0.5)" }}>
             <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" opacity="0.8">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2" fill="none" stroke="currentColor" strokeWidth="2"/>
@@ -159,18 +158,165 @@ function IconPin() {
   );
 }
 
+// --- Price history modal ---
+
+interface PricePoint { price: number; recorded_at: string }
+
+function PriceHistoryModal({
+  listingId,
+  currentPrice,
+  address,
+  onClose,
+}: {
+  listingId: number;
+  currentPrice: number | null;
+  address: string;
+  onClose: () => void;
+}) {
+  const [points, setPoints] = useState<PricePoint[] | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/listings/${listingId}/price-history`)
+      .then((r) => r.ok ? r.json() : [])
+      .then(setPoints)
+      .catch(() => setPoints([]));
+  }, [listingId]);
+
+  const allPoints = points ?? [];
+
+  // Simple SVG spark chart
+  function PriceChart() {
+    if (allPoints.length < 2) return null;
+    const prices = allPoints.map((p) => p.price);
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    const range = max - min || 1;
+    const W = 300, H = 60, PAD = 8;
+    const xs = allPoints.map((_, i) => PAD + (i / (allPoints.length - 1)) * (W - PAD * 2));
+    const ys = allPoints.map((p) => H - PAD - ((p.price - min) / range) * (H - PAD * 2));
+    const path = xs.map((x, i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${ys[i].toFixed(1)}`).join(" ");
+    const isDown = prices[prices.length - 1] < prices[0];
+
+    return (
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="w-full">
+        <polyline
+          points={xs.map((x, i) => `${x},${ys[i]}`).join(" ")}
+          fill="none"
+          stroke={isDown ? "#22c55e" : "#f87171"}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d={`${path} L${xs[xs.length - 1].toFixed(1)},${H} L${PAD},${H} Z`}
+          fill={isDown ? "#22c55e" : "#f87171"}
+          opacity="0.08"
+        />
+        {allPoints.map((p, i) => (
+          <circle key={i} cx={xs[i]} cy={ys[i]} r="3" fill={isDown ? "#22c55e" : "#f87171"} />
+        ))}
+      </svg>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+      <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.5)" }} onClick={onClose} />
+      <div
+        className="relative w-full flex flex-col"
+        style={{ background: "white", borderRadius: "20px 20px 0 0", maxHeight: "70vh", paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+          <div className="w-9 h-1 rounded-full" style={{ background: "#DCE5E1" }} />
+        </div>
+        <div className="flex items-start justify-between px-4 py-3 border-b flex-shrink-0" style={{ borderColor: "#F0F5F3" }}>
+          <div>
+            <p className="font-semibold text-[#0E1512] text-[15px]">Prishistorik</p>
+            <p className="text-[13px] text-[#9AA7A1] mt-0.5">{address}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="ml-3 mt-0.5 w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: "#F0F5F3", color: "#6B7A74" }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="overflow-y-auto flex-1 px-4 py-4">
+          {points === null ? (
+            <p className="text-[13px] text-[#9AA7A1] text-center py-6">Henter…</p>
+          ) : allPoints.length === 0 ? (
+            <p className="text-[13px] text-[#9AA7A1] text-center py-6">
+              Ingen prishistorik endnu — opdateres automatisk ved prisændringer.
+            </p>
+          ) : (
+            <>
+              {allPoints.length >= 2 && (
+                <div className="mb-4 px-1">
+                  <PriceChart />
+                </div>
+              )}
+              <div className="flex flex-col gap-0 rounded-xl border border-[#DCE5E1] overflow-hidden divide-y divide-[#F0F5F3]">
+                {[...allPoints].reverse().map((p, i) => {
+                  const prev = [...allPoints].reverse()[i + 1];
+                  const diff = prev ? p.price - prev.price : 0;
+                  const isFirst = i === allPoints.length - 1;
+                  return (
+                    <div key={p.recorded_at} className="flex items-center justify-between px-4 py-3">
+                      <div>
+                        <span className="text-[14px] font-semibold text-[#0E1512]">
+                          {p.price.toLocaleString("da-DK")} kr.
+                        </span>
+                        {!isFirst && diff !== 0 && (
+                          <span
+                            className="ml-2 text-[12px] font-medium"
+                            style={{ color: diff < 0 ? "#22c55e" : "#f87171" }}
+                          >
+                            {diff < 0 ? "↓" : "↑"} {Math.abs(diff).toLocaleString("da-DK")} kr.
+                          </span>
+                        )}
+                        {isFirst && (
+                          <span className="ml-2 text-[11px] text-[#9AA7A1]">Udbudt</span>
+                        )}
+                      </div>
+                      <span className="text-[12px] text-[#9AA7A1]">
+                        {new Date(p.recorded_at).toLocaleDateString("da-DK", { day: "numeric", month: "short", year: "numeric" })}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Main component ---
+
 interface Props {
   listing: ListingRow;
   tab: ListingStatus;
   index: number;
 }
 
+const STATUS_EMOJI: Record<string, string> = { liked: "👍", disliked: "👎" };
+
 export default function ListingCard({ listing, tab, index }: Props) {
   const router = useRouter();
   const [visible, setVisible] = useState(true);
   const [acting, setActing] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
+  const [priceHistoryOpen, setPriceHistoryOpen] = useState(false);
   const isNew = useIsNew(listing.created_at);
+
+  const hasPriceDrop = listing.previous_price != null && listing.price != null && listing.price < listing.previous_price;
+  const priceDiff = hasPriceDrop ? listing.previous_price! - listing.price! : 0;
 
   const mapUrl =
     listing.lat && listing.lon
@@ -183,7 +329,6 @@ export default function ListingCard({ listing, tab, index }: Props) {
       : ([fixImageUrl(listing.image_url)].filter(Boolean) as string[]);
 
   const energyAccent = listing.energy_class ? ENERGY_COLOR[listing.energy_class] : undefined;
-
   const mapsUrl = `https://maps.apple.com/?q=${encodeURIComponent(listing.address + ", " + listing.zip + " " + listing.city)}`;
 
   async function act(status: ListingStatus) {
@@ -214,17 +359,24 @@ export default function ListingCard({ listing, tab, index }: Props) {
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(-8px) scale(0.97)",
         transition: "opacity 200ms ease, transform 200ms ease",
-        boxShadow: "0 2px 8px rgba(14,21,18,0.07), 0 0 0 0 transparent",
+        boxShadow: "0 2px 8px rgba(14,21,18,0.07)",
       }}
     >
       {/* Image */}
       <div className="relative w-full bg-[#EDF2F0]" style={{ aspectRatio: "16/9" }}>
         <ImageSlider images={images} address={listing.address} />
-        {isNew && (
+
+        {/* Prisfald badge — vises i stedet for Ny hvis prisen er sat ned */}
+        {hasPriceDrop ? (
+          <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide bg-[#22c55e] text-white uppercase z-10">
+            Prisfald
+          </span>
+        ) : isNew && (
           <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide bg-[#52E3A0] text-[#0A3328] uppercase z-10">
             Ny
           </span>
         )}
+
         {mapUrl && (
           <button
             onClick={() => setMapOpen(true)}
@@ -244,26 +396,14 @@ export default function ListingCard({ listing, tab, index }: Props) {
       {/* Map bottom sheet */}
       {mapOpen && mapUrl && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end" style={{ paddingTop: "env(safe-area-inset-top)" }}>
-          <div
-            className="absolute inset-0"
-            style={{ background: "rgba(0,0,0,0.5)" }}
-            onClick={() => setMapOpen(false)}
-          />
+          <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.5)" }} onClick={() => setMapOpen(false)} />
           <div
             className="relative w-full flex flex-col"
-            style={{
-              background: "white",
-              borderRadius: "20px 20px 0 0",
-              height: "80vh",
-              paddingBottom: "env(safe-area-inset-bottom)",
-            }}
+            style={{ background: "white", borderRadius: "20px 20px 0 0", height: "80vh", paddingBottom: "env(safe-area-inset-bottom)" }}
           >
-            {/* Handle */}
             <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
               <div className="w-9 h-1 rounded-full" style={{ background: "#DCE5E1" }} />
             </div>
-
-            {/* Header */}
             <div className="flex items-start justify-between px-4 py-3 border-b flex-shrink-0" style={{ borderColor: "#F0F5F3" }}>
               <div>
                 <p className="font-semibold text-[#0E1512] text-[15px] leading-snug">{listing.address}</p>
@@ -281,19 +421,9 @@ export default function ListingCard({ listing, tab, index }: Props) {
                 </svg>
               </button>
             </div>
-
-            {/* Map */}
             <div className="flex-1 overflow-hidden">
-              <iframe
-                src={mapUrl}
-                width="100%"
-                height="100%"
-                style={{ border: 0, display: "block" }}
-                title={`Kort over ${listing.address}`}
-              />
+              <iframe src={mapUrl} width="100%" height="100%" style={{ border: 0, display: "block" }} title={`Kort over ${listing.address}`} />
             </div>
-
-            {/* Footer */}
             <div className="flex-shrink-0 px-4 py-3 border-t flex gap-2" style={{ borderColor: "#F0F5F3" }}>
               <button
                 onClick={() => setMapOpen(false)}
@@ -322,18 +452,47 @@ export default function ListingCard({ listing, tab, index }: Props) {
         </div>
       )}
 
+      {/* Price history modal */}
+      {priceHistoryOpen && (
+        <PriceHistoryModal
+          listingId={listing.boliga_id}
+          currentPrice={listing.price}
+          address={listing.address}
+          onClose={() => setPriceHistoryOpen(false)}
+        />
+      )}
+
       {/* Content */}
       <div className="px-4 pt-4 pb-4 flex flex-col gap-3">
 
         {/* Price + address */}
         <div>
-          <p className="text-[22px] font-bold text-[#0E1512] leading-none tracking-tight">
-            {formatPrice(listing.price)}
-          </p>
+          {/* Clickable price row */}
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <button
+              onClick={() => setPriceHistoryOpen(true)}
+              className="text-[22px] font-bold text-[#0E1512] leading-none tracking-tight hover:text-[#0F4F3C] transition-colors active:scale-[0.98]"
+            >
+              {formatPrice(listing.price)}
+            </button>
+            {hasPriceDrop && (
+              <span className="text-[13px] font-semibold" style={{ color: "#22c55e" }}>
+                ↓ {priceDiff.toLocaleString("da-DK")} kr.
+              </span>
+            )}
+          </div>
+
+          {/* Previous price strikethrough */}
+          {hasPriceDrop && (
+            <p className="text-[12px] text-[#9AA7A1] mt-0.5 line-through">
+              {formatPrice(listing.previous_price)}
+            </p>
+          )}
+
           <p className="text-[15px] font-medium text-[#0E1512] mt-1.5 leading-snug">
             {listing.address}
           </p>
-          <div className="flex items-center gap-1 mt-1">
+          <div className="flex items-center gap-1 mt-1 flex-wrap">
             <span className="text-[#9AA7A1]"><IconPin /></span>
             <a
               href={mapsUrl}
@@ -369,6 +528,21 @@ export default function ListingCard({ listing, tab, index }: Props) {
             {listing.sqm_price.toLocaleString("da-DK")} kr./m²
             {listing.lot_size ? ` · Grund ${listing.lot_size.toLocaleString("da-DK")} m²` : ""}
           </p>
+        )}
+
+        {/* Partner badges */}
+        {listing.other_interactions.length > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            {listing.other_interactions.map((o) => (
+              <span
+                key={o.name}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-medium"
+                style={{ background: o.status === "liked" ? "#dcfce7" : "#f1f5f9", color: o.status === "liked" ? "#15803d" : "#64748b" }}
+              >
+                {STATUS_EMOJI[o.status]} {o.name}
+              </span>
+            ))}
+          </div>
         )}
 
         {/* Actions */}
