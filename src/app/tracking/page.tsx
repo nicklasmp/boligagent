@@ -13,10 +13,15 @@ function getSupabase() {
 
 interface EventRow {
   id: string;
+  user_id: string | null;
   event: string;
   metadata: Record<string, unknown> | null;
   created_at: string;
-  users: { name: string }[] | null;
+}
+
+interface UserRow {
+  id: string;
+  name: string;
 }
 
 const EVENT_LABELS: Record<string, string> = {
@@ -33,6 +38,8 @@ const TAB_LABELS: Record<string, string> = {
   disliked: "Nej tak",
 };
 
+const DK_TZ = "Europe/Copenhagen";
+
 function formatTime(iso: string): string {
   const d = new Date(iso);
   const now = new Date();
@@ -46,78 +53,116 @@ function formatTime(iso: string): string {
   if (diffH < 24) return `${diffH} t siden`;
   if (diffD === 1) return "I går";
   if (diffD < 7) return `${diffD} dage siden`;
-  return d.toLocaleDateString("da-DK", { day: "numeric", month: "short" });
+  return d.toLocaleDateString("da-DK", { day: "numeric", month: "short", timeZone: DK_TZ });
 }
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("da-DK", {
-    weekday: "long", day: "numeric", month: "long",
+    weekday: "long", day: "numeric", month: "long", timeZone: DK_TZ,
   });
 }
 
-function eventDescription(row: EventRow): string {
-  const label = EVENT_LABELS[row.event] ?? row.event;
-  const meta = row.metadata;
-  if (row.event === "page_view" && meta?.tab) {
-    return `${label}: ${TAB_LABELS[meta.tab as string] ?? meta.tab}`;
+function formatClock(iso: string): string {
+  return new Date(iso).toLocaleTimeString("da-DK", {
+    hour: "2-digit", minute: "2-digit", timeZone: DK_TZ,
+  });
+}
+
+function eventDescription(event: string, metadata: Record<string, unknown> | null): string {
+  const label = EVENT_LABELS[event] ?? event;
+  if (event === "page_view" && metadata?.tab) {
+    return `${label}: ${TAB_LABELS[metadata.tab as string] ?? metadata.tab}`;
   }
-  if ((row.event === "listing_liked" || row.event === "listing_disliked") && meta?.address) {
-    return `${label}: ${meta.address}`;
+  if ((event === "listing_liked" || event === "listing_disliked") && metadata?.address) {
+    return `${label}: ${metadata.address}`;
   }
   return label;
 }
 
-export default async function TrackingPage() {
+const USER_COLORS: Record<string, string> = {
+  nicklas: "#0F4F3C",
+  far: "#2563EB",
+  mor: "#9333EA",
+};
+
+function userColor(name: string) {
+  return USER_COLORS[name.toLowerCase()] ?? "#6B7A74";
+}
+
+export default async function TrackingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ user?: string }>;
+}) {
   const user = await getSessionUserWithName();
   if (!user || user.name.toLowerCase() !== "nicklas") redirect("/");
 
+  const { user: userFilter } = await searchParams;
+
   const supabase = getSupabase();
 
-  const { data: rawEvents } = await supabase
-    .from("events")
-    .select("id, event, metadata, created_at, users(name)")
-    .order("created_at", { ascending: false })
-    .limit(200);
+  const [{ data: rawEvents }, { data: allUsers }] = await Promise.all([
+    supabase
+      .from("events")
+      .select("id, user_id, event, metadata, created_at")
+      .order("created_at", { ascending: false })
+      .limit(500),
+    supabase.from("users").select("id, name"),
+  ]);
 
   const events = (rawEvents ?? []) as EventRow[];
+  const users = (allUsers ?? []) as UserRow[];
+  const userMap = new Map(users.map((u) => [u.id, u.name]));
 
-  // Last seen per user
+  const getUserName = (userId: string | null) =>
+    userId ? (userMap.get(userId) ?? "Ukendt") : "Ukendt";
+
+  // Filter by selected user
+  const filteredEvents = userFilter
+    ? events.filter((e) => getUserName(e.user_id).toLowerCase() === userFilter.toLowerCase())
+    : events;
+
+  // Last seen per user (exclude "Ukendt")
   const lastSeen = new Map<string, { name: string; time: string }>();
   for (const e of events) {
-    const name = e.users?.[0]?.name;
-    if (name && !lastSeen.has(name)) lastSeen.set(name, { name, time: e.created_at });
+    const name = getUserName(e.user_id);
+    if (name !== "Ukendt" && !lastSeen.has(name)) {
+      lastSeen.set(name, { name, time: e.created_at });
+    }
   }
 
-  // Today's action counts per user (exclude page_views)
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
+  // Today's action counts per user (exclude page_views), DK midnight
+  const nowDK = new Date(new Date().toLocaleString("en-US", { timeZone: DK_TZ }));
+  nowDK.setHours(0, 0, 0, 0);
+  const todayStartUTC = new Date(nowDK.getTime() - nowDK.getTimezoneOffset() * 60000);
+
   const actionCounts = new Map<string, number>();
   for (const e of events) {
     if (e.event === "page_view") continue;
-    if (new Date(e.created_at) < todayStart) continue;
-    const name = e.users?.[0]?.name ?? "Ukendt";
+    if (new Date(e.created_at) < todayStartUTC) continue;
+    const name = getUserName(e.user_id);
+    if (name === "Ukendt") continue;
     actionCounts.set(name, (actionCounts.get(name) ?? 0) + 1);
   }
 
-  // Group events by date
-  const groups: { date: string; events: EventRow[] }[] = [];
+  // Group filtered events by DK date
+  type EnrichedEvent = EventRow & { userName: string };
+  const groups: { date: string; events: EnrichedEvent[] }[] = [];
   let currentDate = "";
-  for (const e of events) {
+  for (const e of filteredEvents) {
     const date = formatDate(e.created_at);
     if (date !== currentDate) {
       currentDate = date;
       groups.push({ date, events: [] });
     }
-    groups[groups.length - 1].events.push(e);
+    groups[groups.length - 1].events.push({ ...e, userName: getUserName(e.user_id) });
   }
 
-  const userColors: Record<string, string> = {
-    nicklas: "#0F4F3C",
-    default: "#6B7A74",
-  };
-  function userColor(name: string) {
-    return userColors[name.toLowerCase()] ?? userColors.default;
-  }
+  const uniqueUserNames = [
+    ...new Set(
+      events.map((e) => getUserName(e.user_id)).filter((n) => n !== "Ukendt")
+    ),
+  ];
 
   return (
     <div className="min-h-screen bg-[#F7FAF9]">
@@ -130,7 +175,7 @@ export default async function TrackingPage() {
       <main className="pt-20 pb-10 px-4 max-w-xl mx-auto">
 
         {/* Last seen cards */}
-        <div className="flex gap-3 mb-6">
+        <div className="flex gap-3 mb-5">
           {[...lastSeen.values()].map(({ name, time }) => (
             <div
               key={name}
@@ -156,10 +201,49 @@ export default async function TrackingPage() {
           ))}
         </div>
 
+        {/* User filter tabs */}
+        <div className="flex gap-2 mb-5 flex-wrap">
+          <a
+            href="/tracking"
+            style={{
+              fontSize: 13, fontWeight: 500, padding: "5px 14px",
+              borderRadius: 99, textDecoration: "none",
+              background: !userFilter ? "#0F4F3C" : "white",
+              color: !userFilter ? "white" : "#6B7A74",
+              border: `1px solid ${!userFilter ? "#0F4F3C" : "#DCE5E1"}`,
+            }}
+          >
+            Alle
+          </a>
+          {uniqueUserNames.map((name) => {
+            const active = userFilter?.toLowerCase() === name.toLowerCase();
+            return (
+              <a
+                key={name}
+                href={`/tracking?user=${encodeURIComponent(name)}`}
+                style={{
+                  fontSize: 13, fontWeight: 500, padding: "5px 14px",
+                  borderRadius: 99, textDecoration: "none",
+                  background: active ? userColor(name) : "white",
+                  color: active ? "white" : "#6B7A74",
+                  border: `1px solid ${active ? userColor(name) : "#DCE5E1"}`,
+                }}
+              >
+                {name}
+              </a>
+            );
+          })}
+        </div>
+
         {/* Event feed */}
         {groups.map(({ date, events: groupEvents }) => (
           <div key={date} className="mb-6">
-            <div style={{ fontSize: 11, fontWeight: 600, color: "#9AA7A1", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
+            <div
+              style={{
+                fontSize: 11, fontWeight: 600, color: "#9AA7A1",
+                textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8,
+              }}
+            >
               {date}
             </div>
             <div className="rounded-2xl border border-[#DCE5E1] bg-white overflow-hidden divide-y divide-[#F0F5F3]">
@@ -168,19 +252,21 @@ export default async function TrackingPage() {
                   <div
                     style={{
                       width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
-                      background: userColor(e.users?.[0]?.name ?? ""),
+                      background: userColor(e.userName),
                     }}
                   />
                   <div className="flex-1 min-w-0">
                     <span style={{ fontSize: 13, color: "#0E1512" }}>
-                      {eventDescription(e)}
+                      {eventDescription(e.event, e.metadata)}
                     </span>
-                    <span style={{ fontSize: 12, color: "#9AA7A1", marginLeft: 6 }}>
-                      — {e.users?.[0]?.name ?? "Ukendt"}
-                    </span>
+                    {!userFilter && (
+                      <span style={{ fontSize: 12, color: "#9AA7A1", marginLeft: 6 }}>
+                        — {e.userName}
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: 11, color: "#B0BDB8", flexShrink: 0 }}>
-                    {new Date(e.created_at).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })}
+                    {formatClock(e.created_at)}
                   </div>
                 </div>
               ))}
