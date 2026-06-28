@@ -601,23 +601,31 @@ export default function ListingCard({ listing, tab, index }: Props) {
         )}
 
         {tab !== "new" && (
-          <div className="flex items-center justify-between pt-1">
-            <span className="flex items-center gap-2 text-[13px] text-[#6B7A74]">
+          <div className="flex items-center justify-between gap-3 pt-1">
+            <span
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium flex-shrink-0"
+              style={
+                tab === "liked"
+                  ? { background: "#dcfce7", color: "#15803d" }
+                  : { background: "#F0F5F3", color: "#6B7A74" }
+              }
+            >
               <span
-                className="w-2 h-2 rounded-full inline-block flex-shrink-0"
-                style={{ background: tab === "liked" ? "#52E3A0" : "#DCE5E1" }}
+                className="w-1.5 h-1.5 rounded-full inline-block flex-shrink-0"
+                style={{ background: tab === "liked" ? "#22c55e" : "#B0BDB8" }}
               />
               {tab === "liked" ? "Gemt" : "Ikke interesseret"}
             </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => act("new")}
-                disabled={acting}
-                className="h-8 px-3.5 rounded-full border border-[#DCE5E1] text-[12px] font-medium text-[#6B7A74] hover:border-[#B0BDB8] hover:text-[#0E1512] active:scale-[0.97] transition-all disabled:opacity-40"
-              >
-                Fortryd
-              </button>
-            </div>
+            <button
+              onClick={() => act("new")}
+              disabled={acting}
+              className="flex-1 h-11 rounded-full border border-[#DCE5E1] flex items-center justify-center gap-2 text-[13px] font-medium text-[#6B7A74] hover:border-[#B0BDB8] hover:text-[#0E1512] active:scale-[0.97] transition-all disabled:opacity-40"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 12h18M9 6l-6 6 6 6" />
+              </svg>
+              Fortryd
+            </button>
           </div>
         )}
 
