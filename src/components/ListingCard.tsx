@@ -521,7 +521,7 @@ export default function ListingCard({ listing, tab, index }: Props) {
         {/* Stats grid */}
         {(listing.sqm || listing.rooms || listing.build_year || listing.energy_class) && (
           <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${[listing.sqm, listing.rooms, listing.build_year, listing.energy_class].filter(Boolean).length}, 1fr)` }}>
-            {listing.sqm && <StatCell label="Areal" value={`${listing.sqm} m²`} />}
+            {listing.sqm && <StatCell label="Størrelse" value={`${listing.sqm} m²`} />}
             {listing.rooms && <StatCell label="Rum" value={`${listing.rooms}`} />}
             {listing.build_year && <StatCell label="Opført" value={`${listing.build_year}`} />}
             {listing.energy_class && <StatCell label="Energi" value={listing.energy_class} accent={energyAccent} />}
