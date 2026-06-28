@@ -43,7 +43,7 @@ function getSupabase() {
 
 export async function getListings(userId: string, status: ListingStatus): Promise<ListingRow[]> {
   const supabase = getSupabase();
-  const [{ data: listings, error }, { data: interactions }, { data: otherRaw }] = await Promise.all([
+  const [{ data: listings, error }, { data: interactions }, { data: otherRaw }, { data: allUsers }] = await Promise.all([
     supabase
       .from("listings")
       .select("boliga_id,address,zip,city,price,sqm,lot_size,rooms,build_year,energy_class,days_on_market,sqm_price,neighborhood,lat,lon,url,image_url,image_urls,previous_price,price_changed_at,created_at")
@@ -56,8 +56,11 @@ export async function getListings(userId: string, status: ListingStatus): Promis
       .eq("user_id", userId),
     supabase
       .from("listing_interactions")
-      .select("listing_id, status, users!inner(name)")
+      .select("listing_id, status, user_id")
       .neq("user_id", userId),
+    supabase
+      .from("users")
+      .select("id, name"),
   ]);
 
   if (error) throw new Error(error.message);
@@ -66,9 +69,11 @@ export async function getListings(userId: string, status: ListingStatus): Promis
     (interactions ?? []).map((i) => [i.listing_id, i])
   );
 
+  const userNameMap = new Map((allUsers ?? []).map((u) => [u.id as string, u.name as string]));
+
   const otherMap = new Map<number, OtherInteraction[]>();
   for (const o of otherRaw ?? []) {
-    const name = (o.users as { name: string }[] | null)?.[0]?.name;
+    const name = userNameMap.get(o.user_id);
     if (!name) continue;
     const arr = otherMap.get(o.listing_id) ?? [];
     arr.push({ name, status: o.status as "liked" | "disliked" });
