@@ -22,7 +22,7 @@ export default async function JaTakPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <TabNav counts={counts} />
-      <main className="flex-1 pt-[104px] pb-8 px-4 max-w-xl mx-auto w-full">
+      <main className="flex-1 pt-[104px] pb-8 px-4 max-w-2xl mx-auto w-full">
         <FeedShell>
           {listings.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-center gap-3">

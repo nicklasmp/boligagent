@@ -22,7 +22,7 @@ export default function TabNav({ counts }: Props) {
       className="fixed top-14 left-0 right-0 z-30 bg-[#F7FAF9]/90 backdrop-blur-sm border-b border-[#DCE5E1]"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
-      <div className="flex max-w-xl mx-auto">
+      <div className="flex max-w-2xl mx-auto">
         {LISTING_TABS.map(({ href, label, status }) => {
           const active = pathname === href;
           const count = counts[status];

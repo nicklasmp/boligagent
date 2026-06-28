@@ -95,7 +95,7 @@ function ImageSlider({ images, address }: { images: string[]; address: string })
             src={src}
             alt={`${address} — billede ${i + 1}`}
             fill
-            sizes="(max-width: 640px) 100vw, 640px"
+            sizes="(max-width: 672px) 100vw, 672px"
             className="object-cover"
             onError={() => {
               const idx = images.indexOf(src);
@@ -220,10 +220,10 @@ function PriceHistoryModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+    <div className="fixed inset-0 z-50 flex flex-col justify-end sm:items-center sm:justify-center sm:p-6">
       <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.5)" }} onClick={onClose} />
       <div
-        className="relative w-full flex flex-col"
+        className="relative w-full flex flex-col sm:rounded-2xl sm:max-w-lg sm:mx-auto"
         style={{ background: "white", borderRadius: "20px 20px 0 0", maxHeight: "70vh", paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
@@ -404,12 +404,12 @@ export default function ListingCard({ listing, tab, index }: Props) {
         )}
       </div>
 
-      {/* Map bottom sheet */}
+      {/* Map modal — bottom sheet on mobile, centered dialog on desktop */}
       {mapOpen && mapUrl && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+        <div className="fixed inset-0 z-50 flex flex-col justify-end sm:items-center sm:justify-center sm:p-6">
           <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.5)" }} onClick={() => setMapOpen(false)} />
           <div
-            className="relative w-full flex flex-col"
+            className="relative w-full flex flex-col sm:rounded-2xl sm:max-w-2xl sm:mx-auto"
             style={{ background: "white", borderRadius: "20px 20px 0 0", height: "80vh", paddingBottom: "env(safe-area-inset-bottom)" }}
           >
             <div className="flex justify-center pt-3 pb-1 flex-shrink-0">

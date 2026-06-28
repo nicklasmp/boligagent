@@ -224,7 +224,7 @@ export default async function TrackingPage({
 
       {/* User tabs */}
       <nav className="fixed top-14 left-0 right-0 z-30 bg-[#F7FAF9]/90 backdrop-blur-sm border-b border-[#DCE5E1]">
-        <div className="flex max-w-xl mx-auto">
+        <div className="flex max-w-2xl mx-auto">
           {tabs.map(({ key, label, href }) => {
             const active = (activeUser?.toLowerCase() ?? null) === (key?.toLowerCase() ?? null);
             return (
@@ -247,7 +247,7 @@ export default async function TrackingPage({
         </div>
       </nav>
 
-      <main className="pt-[116px] pb-10 px-4 max-w-xl mx-auto">
+      <main className="pt-[116px] pb-10 px-4 max-w-2xl mx-auto">
 
         {/* Summary cards */}
         {!activeUser ? (

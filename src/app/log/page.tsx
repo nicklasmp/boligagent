@@ -14,7 +14,7 @@ export default async function LogPage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#F7FAF9]">
       <TabNav counts={EMPTY_COUNTS} />
-      <main className="flex-1 pt-[104px] pb-8 px-4 max-w-xl mx-auto w-full">
+      <main className="flex-1 pt-[104px] pb-8 px-4 max-w-2xl mx-auto w-full">
         <h2 className="text-[13px] font-semibold text-[#9AA7A1] uppercase tracking-widest mb-4 mt-4">
           Pollerens log
         </h2>
