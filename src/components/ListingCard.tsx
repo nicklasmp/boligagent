@@ -515,11 +515,6 @@ export default function ListingCard({ listing, tab, index }: Props) {
                 ? `${listing.neighborhood}, ${listing.city}`
                 : `${listing.zip} ${listing.city}`}
             </a>
-            {listing.days_on_market != null && (
-              <span className="text-[13px] text-[#9AA7A1]">
-                &nbsp;·&nbsp;{listing.days_on_market === 0 ? "Ny i dag" : `${listing.days_on_market} dage til salg`}
-              </span>
-            )}
           </div>
         </div>
 
@@ -533,13 +528,31 @@ export default function ListingCard({ listing, tab, index }: Props) {
           </div>
         )}
 
-        {/* m²-pris */}
-        {listing.sqm_price && (
-          <p className="text-[12px] text-[#9AA7A1]">
-            {listing.sqm_price.toLocaleString("da-DK")} kr./m²
-            {listing.lot_size ? ` · Grund ${listing.lot_size.toLocaleString("da-DK")} m²` : ""}
-          </p>
-        )}
+        {/* Pris pr. m² + liggetid */}
+        {(listing.sqm_price || listing.days_on_market != null) && (() => {
+          const dom = listing.days_on_market;
+          const domAccent =
+            dom === 0 ? { bg: "#dcfce7", text: "#15803d" } :
+            dom != null && dom <= 14 ? { bg: "#F0F5F3", text: "#0E1512" } :
+            dom != null && dom <= 60 ? { bg: "#fff7ed", text: "#c2410c" } :
+            dom != null ? { bg: "#fee2e2", text: "#dc2626" } : undefined;
+          const domLabel =
+            dom === 0 ? "Ny i dag" :
+            dom != null ? `${dom} dage` : null;
+
+          const cells = [
+            listing.sqm_price ? { label: "kr./m²", value: listing.sqm_price.toLocaleString("da-DK"), accent: undefined } : null,
+            listing.lot_size ? { label: "Grund", value: `${listing.lot_size.toLocaleString("da-DK")} m²`, accent: undefined } : null,
+            domLabel ? { label: "Liggetid", value: domLabel, accent: domAccent } : null,
+          ].filter(Boolean) as { label: string; value: string; accent?: { bg: string; text: string } }[];
+
+          if (cells.length === 0) return null;
+          return (
+            <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cells.length}, 1fr)` }}>
+              {cells.map((c) => <StatCell key={c.label} label={c.label} value={c.value} accent={c.accent} />)}
+            </div>
+          );
+        })()}
 
         {/* Partner badges — kun liked */}
         {listing.other_interactions.some((o) => o.status === "liked") && (
