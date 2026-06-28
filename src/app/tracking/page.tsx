@@ -117,12 +117,22 @@ export default async function TrackingPage({
   const getUserName = (userId: string | null) =>
     userId ? (userMap.get(userId) ?? "Ukendt") : "Ukendt";
 
-  // Filter by selected user
-  const filteredEvents = userFilter
-    ? events.filter((e) => getUserName(e.user_id).toLowerCase() === userFilter.toLowerCase())
+  // Unique user names that have events (preserve insertion order = alphabetical from DB)
+  const uniqueUserNames = [
+    ...new Set(
+      events.map((e) => getUserName(e.user_id)).filter((n) => n !== "Ukendt")
+    ),
+  ];
+
+  // Active tab key: undefined = "alle"
+  const activeUser = userFilter ?? null;
+
+  // Filter events for feed
+  const filteredEvents = activeUser
+    ? events.filter((e) => getUserName(e.user_id).toLowerCase() === activeUser.toLowerCase())
     : events;
 
-  // Last seen per user (exclude "Ukendt")
+  // Last seen per user
   const lastSeen = new Map<string, { name: string; time: string }>();
   for (const e of events) {
     const name = getUserName(e.user_id);
@@ -131,7 +141,7 @@ export default async function TrackingPage({
     }
   }
 
-  // Today's action counts per user (exclude page_views), DK midnight
+  // Today's action counts per user (exclude page_views), DK midnight boundary
   const nowDK = new Date(new Date().toLocaleString("en-US", { timeZone: DK_TZ }));
   nowDK.setHours(0, 0, 0, 0);
   const todayStartUTC = new Date(nowDK.getTime() - nowDK.getTimezoneOffset() * 60000);
@@ -158,82 +168,110 @@ export default async function TrackingPage({
     groups[groups.length - 1].events.push({ ...e, userName: getUserName(e.user_id) });
   }
 
-  const uniqueUserNames = [
-    ...new Set(
-      events.map((e) => getUserName(e.user_id)).filter((n) => n !== "Ukendt")
-    ),
+  // Tab definitions
+  const tabs = [
+    { key: null, label: "Alle", href: "/tracking" },
+    ...uniqueUserNames.map((name) => ({
+      key: name,
+      label: name,
+      href: `/tracking?user=${encodeURIComponent(name)}`,
+    })),
   ];
 
   return (
     <div className="min-h-screen bg-[#F7FAF9]">
+      {/* Top header */}
       <header className="fixed top-0 left-0 right-0 z-40 h-14 bg-[#F7FAF9]/90 backdrop-blur-sm border-b border-[#DCE5E1] flex items-center px-4 gap-3">
         <a href="/" style={{ color: "#6B7A74", fontSize: 13, textDecoration: "none" }}>← Tilbage</a>
         <span style={{ color: "#DCE5E1" }}>|</span>
         <h1 className="font-semibold text-[#0E1512] text-base">Aktivitet</h1>
       </header>
 
-      <main className="pt-20 pb-10 px-4 max-w-xl mx-auto">
-
-        {/* Last seen cards */}
-        <div className="flex gap-3 mb-5">
-          {[...lastSeen.values()].map(({ name, time }) => (
-            <div
-              key={name}
-              className="flex-1 rounded-2xl border border-[#DCE5E1] bg-white p-4"
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <div
-                  style={{
-                    width: 8, height: 8, borderRadius: "50%",
-                    background: userColor(name), flexShrink: 0,
-                  }}
-                />
-                <span style={{ fontSize: 13, fontWeight: 600, color: "#0E1512" }}>{name}</span>
-              </div>
-              <div style={{ fontSize: 12, color: "#9AA7A1" }}>Sidst set</div>
-              <div style={{ fontSize: 13, color: "#6B7A74", marginTop: 2 }}>{formatTime(time)}</div>
-              {actionCounts.has(name) && (
-                <div style={{ fontSize: 12, color: "#52B888", marginTop: 4 }}>
-                  {actionCounts.get(name)} handlinger i dag
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* User filter tabs */}
-        <div className="flex gap-2 mb-5 flex-wrap">
-          <a
-            href="/tracking"
-            style={{
-              fontSize: 13, fontWeight: 500, padding: "5px 14px",
-              borderRadius: 99, textDecoration: "none",
-              background: !userFilter ? "#0F4F3C" : "white",
-              color: !userFilter ? "white" : "#6B7A74",
-              border: `1px solid ${!userFilter ? "#0F4F3C" : "#DCE5E1"}`,
-            }}
-          >
-            Alle
-          </a>
-          {uniqueUserNames.map((name) => {
-            const active = userFilter?.toLowerCase() === name.toLowerCase();
+      {/* User tabs — fixed below header, same style as TabNav */}
+      <nav className="fixed top-14 left-0 right-0 z-30 bg-[#F7FAF9]/90 backdrop-blur-sm border-b border-[#DCE5E1]">
+        <div className="flex max-w-xl mx-auto">
+          {tabs.map(({ key, label, href }) => {
+            const active = (activeUser?.toLowerCase() ?? null) === (key?.toLowerCase() ?? null);
             return (
               <a
-                key={name}
-                href={`/tracking?user=${encodeURIComponent(name)}`}
+                key={label}
+                href={href}
+                className="flex-1 flex items-center justify-center h-11 text-sm font-medium relative transition-colors"
                 style={{
-                  fontSize: 13, fontWeight: 500, padding: "5px 14px",
-                  borderRadius: 99, textDecoration: "none",
-                  background: active ? userColor(name) : "white",
-                  color: active ? "white" : "#6B7A74",
-                  border: `1px solid ${active ? userColor(name) : "#DCE5E1"}`,
+                  color: active ? "#0F4F3C" : "#6B7A74",
+                  textDecoration: "none",
                 }}
               >
-                {name}
+                {label}
+                {active && (
+                  <span
+                    className="absolute bottom-0 left-4 right-4 rounded-full"
+                    style={{ height: 2, background: key ? userColor(key) : "#0F4F3C" }}
+                  />
+                )}
               </a>
             );
           })}
         </div>
+      </nav>
+
+      {/* main — push down past header (56px) + tab bar (44px) = 100px */}
+      <main className="pt-[116px] pb-10 px-4 max-w-xl mx-auto">
+
+        {/* Last seen cards — only show in "Alle" view */}
+        {!activeUser && (
+          <div className="flex gap-3 mb-6">
+            {[...lastSeen.values()].map(({ name, time }) => (
+              <div
+                key={name}
+                className="flex-1 rounded-2xl border border-[#DCE5E1] bg-white p-4"
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div
+                    style={{
+                      width: 8, height: 8, borderRadius: "50%",
+                      background: userColor(name), flexShrink: 0,
+                    }}
+                  />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "#0E1512" }}>{name}</span>
+                </div>
+                <div style={{ fontSize: 12, color: "#9AA7A1" }}>Sidst set</div>
+                <div style={{ fontSize: 13, color: "#6B7A74", marginTop: 2 }}>{formatTime(time)}</div>
+                {actionCounts.has(name) && (
+                  <div style={{ fontSize: 12, color: "#52B888", marginTop: 4 }}>
+                    {actionCounts.get(name)} handlinger i dag
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Single-user summary card */}
+        {activeUser && lastSeen.has(activeUser) && (() => {
+          const { name, time } = lastSeen.get(activeUser)!;
+          return (
+            <div
+              className="rounded-2xl border border-[#DCE5E1] bg-white p-4 mb-6 flex items-center gap-4"
+            >
+              <div
+                style={{
+                  width: 10, height: 10, borderRadius: "50%",
+                  background: userColor(name), flexShrink: 0,
+                }}
+              />
+              <div>
+                <div style={{ fontSize: 12, color: "#9AA7A1" }}>Sidst set</div>
+                <div style={{ fontSize: 13, color: "#6B7A74" }}>{formatTime(time)}</div>
+              </div>
+              {actionCounts.has(name) && (
+                <div style={{ marginLeft: "auto", fontSize: 12, color: "#52B888" }}>
+                  {actionCounts.get(name)} handlinger i dag
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Event feed */}
         {groups.map(({ date, events: groupEvents }) => (
@@ -259,7 +297,7 @@ export default async function TrackingPage({
                     <span style={{ fontSize: 13, color: "#0E1512" }}>
                       {eventDescription(e.event, e.metadata)}
                     </span>
-                    {!userFilter && (
+                    {!activeUser && (
                       <span style={{ fontSize: 12, color: "#9AA7A1", marginLeft: 6 }}>
                         — {e.userName}
                       </span>
