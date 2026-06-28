@@ -479,16 +479,34 @@ export default function ListingCard({ listing, tab, index }: Props) {
         {/* Price + address */}
         <div>
           {/* Clickable price row */}
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <button
-              onClick={() => setPriceHistoryOpen(true)}
-              className="text-[22px] font-bold text-[#0E1512] leading-none tracking-tight hover:text-[#0F4F3C] transition-colors active:scale-[0.98]"
-            >
-              {formatPrice(listing.price)}
-            </button>
-            {hasPriceDrop && (
-              <span className="text-[13px] font-semibold" style={{ color: "#22c55e" }}>
-                ↓ {priceDiff.toLocaleString("da-DK")} kr.
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <button
+                onClick={() => setPriceHistoryOpen(true)}
+                className="text-[22px] font-bold text-[#0E1512] leading-none tracking-tight hover:text-[#0F4F3C] transition-colors active:scale-[0.98]"
+              >
+                {formatPrice(listing.price)}
+              </button>
+              {hasPriceDrop && (
+                <span className="text-[13px] font-semibold" style={{ color: "#22c55e" }}>
+                  ↓ {priceDiff.toLocaleString("da-DK")} kr.
+                </span>
+              )}
+            </div>
+            {tab !== "new" && (
+              <span
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium flex-shrink-0"
+                style={
+                  tab === "liked"
+                    ? { background: "#dcfce7", color: "#15803d" }
+                    : { background: "#F0F5F3", color: "#6B7A74" }
+                }
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={{ background: tab === "liked" ? "#22c55e" : "#B0BDB8" }}
+                />
+                {tab === "liked" ? "Gemt" : "Ikke interesseret"}
               </span>
             )}
           </div>
@@ -601,25 +619,11 @@ export default function ListingCard({ listing, tab, index }: Props) {
         )}
 
         {tab !== "new" && (
-          <div className="flex items-center justify-between gap-3 pt-1">
-            <span
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium flex-shrink-0"
-              style={
-                tab === "liked"
-                  ? { background: "#dcfce7", color: "#15803d" }
-                  : { background: "#F0F5F3", color: "#6B7A74" }
-              }
-            >
-              <span
-                className="w-1.5 h-1.5 rounded-full inline-block flex-shrink-0"
-                style={{ background: tab === "liked" ? "#22c55e" : "#B0BDB8" }}
-              />
-              {tab === "liked" ? "Gemt" : "Ikke interesseret"}
-            </span>
+          <div className="pt-1">
             <button
               onClick={() => act("new")}
               disabled={acting}
-              className="flex-1 h-11 rounded-full border border-[#DCE5E1] flex items-center justify-center gap-2 text-[13px] font-medium text-[#6B7A74] hover:border-[#B0BDB8] hover:text-[#0E1512] active:scale-[0.97] transition-all disabled:opacity-40"
+              className="w-full h-9 rounded-full border border-[#DCE5E1] flex items-center justify-center gap-2 text-[13px] font-medium text-[#6B7A74] hover:border-[#B0BDB8] hover:text-[#0E1512] active:scale-[0.97] transition-all disabled:opacity-40"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 12h18M9 6l-6 6 6 6" />
