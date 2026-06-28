@@ -53,9 +53,24 @@ function UserMenu() {
   if (!meta) return null;
 
   const otherUsers = (meta.users ?? []).filter((u) => u.id !== meta.id);
+  const showLog = meta.isAdmin && !meta.isImpersonating;
 
   return (
     <div className="relative flex items-center gap-2">
+      {/* Log-knap — kun synlig for Nicklas */}
+      {showLog && (
+        <a
+          href="/log"
+          className="flex items-center justify-center w-8 h-8 rounded-full transition-colors hover:bg-[#EDF2F0]"
+          style={{ color: "#6B7A74" }}
+          aria-label="Log"
+        >
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+        </a>
+      )}
       {/* Impersonation indicator */}
       {meta.isImpersonating && (
         <button

@@ -53,21 +53,6 @@ export default function TabNav({ counts }: Props) {
           );
         })}
 
-        {/* Log-tab */}
-        <Link
-          href="/log"
-          className={`flex-1 flex items-center justify-center h-11 relative transition-colors ${
-            pathname === "/log" ? "text-[#0F4F3C]" : "text-[#6B7A74] hover:text-[#0E1512]"
-          }`}
-        >
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-          {pathname === "/log" && (
-            <span className="absolute bottom-0 left-4 right-4 h-[2px] rounded-full bg-[#0F4F3C]" />
-          )}
-        </Link>
       </div>
     </nav>
   );
