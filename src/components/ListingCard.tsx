@@ -575,11 +575,21 @@ export default function ListingCard({ listing, tab, index }: Props) {
 
         {/* Actions */}
         {tab === "new" && (
-          <div className="pt-1">
+          <div className="flex gap-2.5 pt-1">
+            <button
+              onClick={() => act("disliked")}
+              disabled={acting}
+              className="flex-1 h-11 rounded-full border border-[#DCE5E1] flex items-center justify-center gap-2 text-[13px] font-medium text-[#6B7A74] hover:border-[#B0BDB8] hover:text-[#0E1512] active:scale-[0.97] transition-all disabled:opacity-40"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+              Ikke interesseret
+            </button>
             <button
               onClick={() => act("liked")}
               disabled={acting}
-              className="w-full h-11 rounded-full flex items-center justify-center gap-2 text-[13px] font-semibold text-white active:scale-[0.97] transition-all disabled:opacity-40"
+              className="flex-1 h-11 rounded-full flex items-center justify-center gap-2 text-[13px] font-semibold text-white active:scale-[0.97] transition-all disabled:opacity-40"
               style={{ background: "#0F4F3C" }}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
