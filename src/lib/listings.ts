@@ -2,6 +2,11 @@ import { createClient } from "@supabase/supabase-js";
 
 export type ListingStatus = "new" | "liked" | "disliked";
 
+export interface OtherInteraction {
+  name: string;
+  status: "liked" | "disliked";
+}
+
 export interface ListingRow {
   boliga_id: number;
   address: string;
@@ -21,9 +26,12 @@ export interface ListingRow {
   url: string;
   image_url: string | null;
   image_urls: string[] | null;
+  previous_price: number | null;
+  price_changed_at: string | null;
   status: ListingStatus;
   note: string | null;
   created_at: string;
+  other_interactions: OtherInteraction[];
 }
 
 function getSupabase() {
@@ -35,10 +43,10 @@ function getSupabase() {
 
 export async function getListings(userId: string, status: ListingStatus): Promise<ListingRow[]> {
   const supabase = getSupabase();
-  const [{ data: listings, error }, { data: interactions }] = await Promise.all([
+  const [{ data: listings, error }, { data: interactions }, { data: otherRaw }] = await Promise.all([
     supabase
       .from("listings")
-      .select("boliga_id,address,zip,city,price,sqm,lot_size,rooms,build_year,energy_class,days_on_market,sqm_price,neighborhood,lat,lon,url,image_url,image_urls,created_at")
+      .select("boliga_id,address,zip,city,price,sqm,lot_size,rooms,build_year,energy_class,days_on_market,sqm_price,neighborhood,lat,lon,url,image_url,image_urls,previous_price,price_changed_at,created_at")
       .order("days_on_market", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: false })
       .limit(200),
@@ -46,6 +54,10 @@ export async function getListings(userId: string, status: ListingStatus): Promis
       .from("listing_interactions")
       .select("listing_id, status, note")
       .eq("user_id", userId),
+    supabase
+      .from("listing_interactions")
+      .select("listing_id, status, users!inner(name)")
+      .neq("user_id", userId),
   ]);
 
   if (error) throw new Error(error.message);
@@ -53,6 +65,15 @@ export async function getListings(userId: string, status: ListingStatus): Promis
   const interactionMap = new Map(
     (interactions ?? []).map((i) => [i.listing_id, i])
   );
+
+  const otherMap = new Map<number, OtherInteraction[]>();
+  for (const o of otherRaw ?? []) {
+    const name = (o.users as { name: string }[] | null)?.[0]?.name;
+    if (!name) continue;
+    const arr = otherMap.get(o.listing_id) ?? [];
+    arr.push({ name, status: o.status as "liked" | "disliked" });
+    otherMap.set(o.listing_id, arr);
+  }
 
   return (listings ?? [])
     .filter((l) => {
@@ -65,6 +86,7 @@ export async function getListings(userId: string, status: ListingStatus): Promis
         ...l,
         status: (interaction?.status ?? "new") as ListingStatus,
         note: interaction?.note ?? null,
+        other_interactions: otherMap.get(l.boliga_id) ?? [],
       };
     });
 }

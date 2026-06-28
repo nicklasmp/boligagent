@@ -16,7 +16,7 @@ interface EventRow {
   event: string;
   metadata: Record<string, unknown> | null;
   created_at: string;
-  users: { name: string } | null;
+  users: { name: string }[] | null;
 }
 
 const EVENT_LABELS: Record<string, string> = {
@@ -84,7 +84,7 @@ export default async function TrackingPage() {
   // Last seen per user
   const lastSeen = new Map<string, { name: string; time: string }>();
   for (const e of events) {
-    const name = e.users?.name;
+    const name = e.users?.[0]?.name;
     if (name && !lastSeen.has(name)) lastSeen.set(name, { name, time: e.created_at });
   }
 
@@ -95,7 +95,7 @@ export default async function TrackingPage() {
   for (const e of events) {
     if (e.event === "page_view") continue;
     if (new Date(e.created_at) < todayStart) continue;
-    const name = e.users?.name ?? "Ukendt";
+    const name = e.users?.[0]?.name ?? "Ukendt";
     actionCounts.set(name, (actionCounts.get(name) ?? 0) + 1);
   }
 
@@ -168,7 +168,7 @@ export default async function TrackingPage() {
                   <div
                     style={{
                       width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
-                      background: userColor(e.users?.name ?? ""),
+                      background: userColor(e.users?.[0]?.name ?? ""),
                     }}
                   />
                   <div className="flex-1 min-w-0">
@@ -176,7 +176,7 @@ export default async function TrackingPage() {
                       {eventDescription(e)}
                     </span>
                     <span style={{ fontSize: 12, color: "#9AA7A1", marginLeft: 6 }}>
-                      — {e.users?.name ?? "Ukendt"}
+                      — {e.users?.[0]?.name ?? "Ukendt"}
                     </span>
                   </div>
                   <div style={{ fontSize: 11, color: "#B0BDB8", flexShrink: 0 }}>
