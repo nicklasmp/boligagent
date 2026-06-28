@@ -138,8 +138,8 @@ function UserMenu() {
               </>
             )}
 
-            {/* Aktivitet — kun for admin (også ved impersonering) */}
-            {meta.isAdmin && (
+            {/* Aktivitet — kun for Nicklas selv, ikke ved impersonering */}
+            {meta.isAdmin && !meta.isImpersonating && (
               <a
                 href="/tracking"
                 className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-[#F0F5F3] transition-colors flex items-center gap-2"
