@@ -10,6 +10,7 @@ function getSupabase() {
 }
 
 export const SESSION_COOKIE = "ba_session";
+export const REAL_SESSION_COOKIE = "ba_real_session";
 const SESSION_DAYS = 90;
 
 function generateToken(): string {
@@ -83,6 +84,48 @@ export async function logout(): Promise<void> {
   if (token) {
     await getSupabase().from("sessions").delete().eq("token", token);
   }
+}
+
+export async function getSessionMeta(): Promise<{
+  id: string;
+  name: string;
+  isAdmin: boolean;
+  isImpersonating: boolean;
+} | null> {
+  const cookieStore = await cookies();
+  const activeToken = cookieStore.get(SESSION_COOKIE)?.value;
+  const realToken = cookieStore.get(REAL_SESSION_COOKIE)?.value;
+
+  if (!activeToken) return null;
+
+  const supabase = getSupabase();
+
+  async function resolveUser(token: string) {
+    const { data: session } = await supabase
+      .from("sessions")
+      .select("user_id, expires_at")
+      .eq("token", token)
+      .single();
+    if (!session || new Date(session.expires_at) < new Date()) return null;
+    const { data: user } = await supabase
+      .from("users")
+      .select("id, name")
+      .eq("id", session.user_id)
+      .single();
+    return user ?? null;
+  }
+
+  const activeUser = await resolveUser(activeToken);
+  if (!activeUser) return null;
+
+  if (realToken) {
+    const realUser = await resolveUser(realToken);
+    const isAdmin = realUser?.name.toLowerCase() === "nicklas";
+    return { id: activeUser.id, name: activeUser.name, isAdmin, isImpersonating: true };
+  }
+
+  const isAdmin = activeUser.name.toLowerCase() === "nicklas";
+  return { id: activeUser.id, name: activeUser.name, isAdmin, isImpersonating: false };
 }
 
 export { SESSION_DAYS };

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getSessionMeta } from "@/lib/auth";
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -7,10 +8,13 @@ const supabase = createClient(
 );
 
 export async function GET() {
+  const meta = await getSessionMeta();
+  if (!meta?.isAdmin) return NextResponse.json([], { status: 403 });
+
   const { data } = await supabase
     .from("users")
-    .select("name")
+    .select("id, name")
     .order("created_at");
 
-  return NextResponse.json((data ?? []).map((u) => u.name));
+  return NextResponse.json(data ?? []);
 }
