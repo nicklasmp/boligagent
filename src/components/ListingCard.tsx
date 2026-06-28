@@ -479,7 +479,7 @@ export default function ListingCard({ listing, tab, index }: Props) {
         {/* Price + address */}
         <div>
           {/* Clickable price row */}
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-start justify-between gap-2">
             <div className="flex items-baseline gap-2 flex-wrap">
               <button
                 onClick={() => setPriceHistoryOpen(true)}
@@ -493,21 +493,36 @@ export default function ListingCard({ listing, tab, index }: Props) {
                 </span>
               )}
             </div>
-            {tab !== "new" && (
-              <span
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium flex-shrink-0"
-                style={
-                  tab === "liked"
-                    ? { background: "#dcfce7", color: "#15803d" }
-                    : { background: "#F0F5F3", color: "#6B7A74" }
-                }
-              >
-                <span
-                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                  style={{ background: tab === "liked" ? "#22c55e" : "#B0BDB8" }}
-                />
-                {tab === "liked" ? "Gemt" : "Ikke interesseret"}
-              </span>
+            {/* Pills: status + partner badges */}
+            {(tab !== "new" || listing.other_interactions.some((o) => o.status === "liked")) && (
+              <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                {tab !== "new" && (
+                  <span
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium"
+                    style={
+                      tab === "liked"
+                        ? { background: "#dcfce7", color: "#15803d" }
+                        : { background: "#F0F5F3", color: "#6B7A74" }
+                    }
+                  >
+                    <span
+                      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                      style={{ background: tab === "liked" ? "#22c55e" : "#B0BDB8" }}
+                    />
+                    {tab === "liked" ? "Gemt" : "Ikke interesseret"}
+                  </span>
+                )}
+                {listing.other_interactions.filter((o) => o.status === "liked").map((o) => (
+                  <span
+                    key={o.name}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium"
+                    style={{ background: "#dcfce7", color: "#15803d" }}
+                  >
+                    <StatusIcon status="liked" />
+                    {o.name}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
 
@@ -572,24 +587,6 @@ export default function ListingCard({ listing, tab, index }: Props) {
           );
         })()}
 
-        {/* Partner badges — kun liked */}
-        {listing.other_interactions.some((o) => o.status === "liked") && (
-          <div className="flex gap-2 flex-wrap">
-            {listing.other_interactions.filter((o) => o.status === "liked").map((o) => (
-              <span
-                key={o.name}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-medium"
-                style={{
-                  background: o.status === "liked" ? "#dcfce7" : "#f1f5f9",
-                  color: o.status === "liked" ? "#15803d" : "#64748b",
-                }}
-              >
-                <StatusIcon status={o.status} />
-                {o.name}
-              </span>
-            ))}
-          </div>
-        )}
 
         {/* Actions */}
         {tab === "new" && (
