@@ -35,7 +35,8 @@ export async function GET(req: NextRequest) {
   const existingPriceMap = new Map((existing ?? []).map((r) => [r.boliga_id, r.price as number | null]));
 
   const newListings = listings.filter((l) => !existingPriceMap.has(l.boliga_id));
-  const priceDrops = listings.filter((l) => {
+  const existingListings = listings.filter((l) => existingPriceMap.has(l.boliga_id));
+  const priceDrops = existingListings.filter((l) => {
     const old = existingPriceMap.get(l.boliga_id);
     return old != null && l.price != null && l.price < old;
   });
@@ -88,6 +89,18 @@ export async function GET(req: NextRequest) {
     ]);
 
     priceDropResults.push({ address: l.address, old: oldPrice, new: l.price });
+  }
+
+  // Keep url/image fields fresh for existing listings (fixes stale boliga.dk URLs)
+  if (existingListings.length > 0) {
+    await Promise.all(
+      existingListings.map((l) =>
+        supabase
+          .from("listings")
+          .update({ url: l.url, image_url: l.image_url, image_urls: l.image_urls })
+          .eq("boliga_id", l.boliga_id)
+      )
+    );
   }
 
   // Push deaktiveret — API afviser requests fra Vercel
