@@ -420,14 +420,13 @@ export default function ListingCard({ listing, tab, index }: Props) {
           </div>
         )}
 
-        {/* Boliga link */}
         <a
           href={listing.url}
           target="_blank"
           rel="noopener noreferrer"
           className="text-center text-[12px] text-[#9AA7A1] hover:text-[#0F4F3C] transition-colors pt-0.5"
         >
-          Se fuldt opslag på Boliga
+          Se fuldt opslag på Boligsiden
         </a>
       </div>
     </div>
