@@ -30,7 +30,7 @@ export default async function NyePage() {
                 <path d="M22 54 60 20l38 34v44a4 4 0 0 1-4 4H26a4 4 0 0 1-4-4V54Z" stroke="#0F4F3C" strokeWidth="9" strokeLinejoin="round"/>
               </svg>
               <p className="text-[#a0a0a0] text-sm leading-relaxed max-w-xs">
-                Ingen nye rækkehuse lige nu — du får en notifikation, når et nyt dukker op.
+                Ingen nye rækkehuse lige nu.
               </p>
             </div>
           ) : (
