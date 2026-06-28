@@ -541,10 +541,10 @@ export default function ListingCard({ listing, tab, index }: Props) {
           </p>
         )}
 
-        {/* Partner badges */}
-        {listing.other_interactions.length > 0 && (
+        {/* Partner badges — kun liked */}
+        {listing.other_interactions.some((o) => o.status === "liked") && (
           <div className="flex gap-2 flex-wrap">
-            {listing.other_interactions.map((o) => (
+            {listing.other_interactions.filter((o) => o.status === "liked").map((o) => (
               <span
                 key={o.name}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-medium"
