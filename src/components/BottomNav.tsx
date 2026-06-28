@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ListingStatus } from "@/lib/listings";
 
-const TABS = [
+const LISTING_TABS = [
   {
     href: "/",
     label: "Nye",
@@ -40,6 +40,15 @@ const TABS = [
   },
 ];
 
+function BellIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill={active ? "#0F4F3C" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  );
+}
+
 interface Props {
   counts: Record<ListingStatus, number>;
 }
@@ -53,7 +62,7 @@ export default function BottomNav({ counts }: Props) {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="flex">
-        {TABS.map(({ href, label, status, icon }) => {
+        {LISTING_TABS.map(({ href, label, status, icon }) => {
           const active = pathname === href;
           const count = counts[status];
           return (
@@ -82,6 +91,19 @@ export default function BottomNav({ counts }: Props) {
             </Link>
           );
         })}
+
+        {/* Log tab */}
+        <Link
+          href="/log"
+          className="flex-1 flex flex-col items-center gap-1 py-2.5 relative"
+        >
+          <span className={pathname === "/log" ? "text-[#0F4F3C]" : "text-[#6B7A74]"}>
+            <BellIcon active={pathname === "/log"} />
+          </span>
+          <span className={`text-[10px] font-medium ${pathname === "/log" ? "text-[#0F4F3C]" : "text-[#6B7A74]"}`}>
+            Log
+          </span>
+        </Link>
       </div>
     </nav>
   );

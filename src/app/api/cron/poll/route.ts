@@ -40,16 +40,29 @@ export async function GET(req: NextRequest) {
     return old != null && l.price != null && l.price < old;
   });
 
-  // Insert new listings + record initial price
+  // Insert new listings + record initial price + log
   if (newListings.length > 0) {
     const { error: insertError } = await supabase
       .from("listings")
       .insert(newListings.map((l) => ({ ...l, status: "new" })));
     if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 });
 
-    await supabase.from("price_history").insert(
-      newListings.map((l) => ({ listing_id: l.boliga_id, price: l.price }))
-    );
+    await Promise.all([
+      supabase.from("price_history").insert(
+        newListings.map((l) => ({ listing_id: l.boliga_id, price: l.price }))
+      ),
+      supabase.from("notification_log").insert(
+        newListings.map((l) => ({
+          title: `Nyt rækkehus i ${l.zip}`,
+          body: `${l.address} · ${l.price ? l.price.toLocaleString("da-DK") + " kr." : "—"}`,
+          type: "new_listing",
+          listing_id: String(l.boliga_id),
+        }))
+      ),
+    ]);
+
+    // Keep max 50 rows
+    await supabase.rpc("trim_notification_log");
   }
 
   // Handle price drops: update listing, record history, reset interactions
@@ -57,6 +70,7 @@ export async function GET(req: NextRequest) {
   for (const l of priceDrops) {
     const oldPrice = existingPriceMap.get(l.boliga_id)!;
 
+    const diff = oldPrice - l.price;
     await Promise.all([
       supabase.from("listings").update({
         price: l.price,
@@ -65,6 +79,12 @@ export async function GET(req: NextRequest) {
       }).eq("boliga_id", l.boliga_id),
       supabase.from("price_history").insert({ listing_id: l.boliga_id, price: l.price }),
       supabase.from("listing_interactions").delete().eq("listing_id", l.boliga_id),
+      supabase.from("notification_log").insert({
+        title: `Prisfald på ${l.zip}-bolig`,
+        body: `${l.address} · ↓ ${diff.toLocaleString("da-DK")} kr. (nu ${l.price.toLocaleString("da-DK")} kr.)`,
+        type: "price_drop",
+        listing_id: String(l.boliga_id),
+      }),
     ]);
 
     priceDropResults.push({ address: l.address, old: oldPrice, new: l.price });
