@@ -27,7 +27,7 @@ Koden er udkommenteret i `src/app/api/cron/poll/route.ts` og `src/app/api/refres
 `PushButton` i `TopBar.tsx` returnerer `null`.
 
 ## Feed-UI
-- Tre faner: **Nye** / **Ja tak** / **Nej tak**
+- Tre faner: **Nye** / **Gemte** / **Nej tak**
 - Swipe/knap til at skifte status på en listing
 - Listing-interaktioner gemmes i `listing_interactions`-tabellen per bruger
 - Light mode UI med grøn accentfarve (`#0F4F3C` / `#52E3A0`)

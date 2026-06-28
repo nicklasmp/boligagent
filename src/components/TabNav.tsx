@@ -12,7 +12,7 @@ const TABS = [
   },
   {
     href: "/ja-tak",
-    label: "Ja tak",
+    label: "Gemte",
     status: "liked" as ListingStatus,
   },
   {

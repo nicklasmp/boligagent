@@ -18,7 +18,7 @@ const TABS = [
   },
   {
     href: "/ja-tak",
-    label: "Ja tak",
+    label: "Gemte",
     status: "liked" as ListingStatus,
     icon: (active: boolean) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill={active ? "#0F4F3C" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
