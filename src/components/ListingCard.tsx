@@ -575,20 +575,26 @@ export default function ListingCard({ listing, tab, index }: Props) {
 
         {/* Actions */}
         {tab === "new" && (
-          <div className="flex gap-2 pt-1">
+          <div className="flex gap-2.5 pt-1">
             <button
               onClick={() => act("disliked")}
               disabled={acting}
-              className="flex-1 h-11 rounded-xl border border-[#DCE5E1] text-[13px] font-medium text-[#6B7A74] hover:border-[#B0BDB8] hover:text-[#0E1512] active:scale-[0.98] transition-all disabled:opacity-40"
+              className="flex-1 h-11 rounded-full border border-[#DCE5E1] flex items-center justify-center gap-2 text-[13px] font-medium text-[#6B7A74] hover:border-[#B0BDB8] hover:text-[#0E1512] active:scale-[0.97] transition-all disabled:opacity-40"
             >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
               Ikke interesseret
             </button>
             <button
               onClick={() => act("liked")}
               disabled={acting}
-              className="flex-1 h-11 rounded-xl text-[13px] font-semibold text-white active:scale-[0.98] transition-all disabled:opacity-40"
+              className="flex-1 h-11 rounded-full flex items-center justify-center gap-2 text-[13px] font-semibold text-white active:scale-[0.97] transition-all disabled:opacity-40"
               style={{ background: "#0F4F3C" }}
             >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+              </svg>
               Gem bolig
             </button>
           </div>
@@ -598,7 +604,7 @@ export default function ListingCard({ listing, tab, index }: Props) {
           <div className="flex items-center justify-between pt-1">
             <span className="flex items-center gap-2 text-[13px] text-[#6B7A74]">
               <span
-                className="w-2 h-2 rounded-full inline-block"
+                className="w-2 h-2 rounded-full inline-block flex-shrink-0"
                 style={{ background: tab === "liked" ? "#52E3A0" : "#DCE5E1" }}
               />
               {tab === "liked" ? "Gemt" : "Ikke interesseret"}
@@ -607,14 +613,14 @@ export default function ListingCard({ listing, tab, index }: Props) {
               <button
                 onClick={() => act("new")}
                 disabled={acting}
-                className="h-8 px-3 rounded-lg border border-[#DCE5E1] text-[12px] text-[#6B7A74] hover:border-[#B0BDB8] hover:text-[#0E1512] active:scale-[0.98] transition-all disabled:opacity-40"
+                className="h-8 px-3.5 rounded-full border border-[#DCE5E1] text-[12px] font-medium text-[#6B7A74] hover:border-[#B0BDB8] hover:text-[#0E1512] active:scale-[0.97] transition-all disabled:opacity-40"
               >
                 Fortryd
               </button>
               <button
                 onClick={() => act(tab === "liked" ? "disliked" : "liked")}
                 disabled={acting}
-                className="h-8 px-3 rounded-lg border border-[#DCE5E1] text-[12px] text-[#6B7A74] hover:border-[#B0BDB8] hover:text-[#0E1512] active:scale-[0.98] transition-all disabled:opacity-40"
+                className="h-8 px-3.5 rounded-full border border-[#DCE5E1] text-[12px] font-medium text-[#6B7A74] hover:border-[#B0BDB8] hover:text-[#0E1512] active:scale-[0.97] transition-all disabled:opacity-40"
               >
                 {tab === "liked" ? "Ikke interesseret" : "Gem bolig"}
               </button>
