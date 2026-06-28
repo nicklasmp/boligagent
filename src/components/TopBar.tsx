@@ -49,8 +49,21 @@ function UserMenu() {
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div
             className="absolute right-0 top-full mt-2 z-50 rounded-xl overflow-hidden"
-            style={{ background: "white", border: "1px solid #DCE5E1", boxShadow: "0 4px 16px rgba(14,21,18,0.1)", minWidth: 120 }}
+            style={{ background: "white", border: "1px solid #DCE5E1", boxShadow: "0 4px 16px rgba(14,21,18,0.1)", minWidth: 140 }}
           >
+            {name.toLowerCase() === "nicklas" && (
+              <a
+                href="/tracking"
+                className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-[#F0F5F3] transition-colors flex items-center gap-2"
+                style={{ color: "#0E1512", textDecoration: "none", display: "flex" }}
+                onClick={() => setOpen(false)}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                </svg>
+                Aktivitet
+              </a>
+            )}
             <button
               onClick={handleLogout}
               className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-[#F0F5F3] transition-colors"
