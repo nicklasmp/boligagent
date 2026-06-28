@@ -141,11 +141,103 @@ function ImageSlider({ images, address }: { images: string[]; address: string })
   );
 }
 
-function StatCell({ label, value, accent }: { label: string; value: string; accent?: { bg: string; text: string } }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-2.5 px-1 rounded-xl" style={{ background: accent?.bg ?? "#F0F5F3" }}>
+function StatCell({ label, value, accent, onClick }: { label: string; value: string; accent?: { bg: string; text: string }; onClick?: () => void }) {
+  const inner = (
+    <>
       <span className="text-[13px] font-semibold leading-none" style={{ color: accent?.text ?? "#0E1512" }}>{value}</span>
       <span className="text-[10px] mt-1 leading-none" style={{ color: accent ? accent.text + "bb" : "#9AA7A1" }}>{label}</span>
+    </>
+  );
+  if (onClick) {
+    return (
+      <button
+        onClick={onClick}
+        className="flex flex-col items-center justify-center py-2.5 px-1 rounded-xl w-full active:scale-[0.97] transition-transform"
+        style={{ background: accent?.bg ?? "#F0F5F3" }}
+      >
+        {inner}
+      </button>
+    );
+  }
+  return (
+    <div className="flex flex-col items-center justify-center py-2.5 px-1 rounded-xl" style={{ background: accent?.bg ?? "#F0F5F3" }}>
+      {inner}
+    </div>
+  );
+}
+
+const ENERGY_LABELS: { label: string; kwh: string; desc: string }[] = [
+  { label: "A2020", kwh: "< 20 kWh/m²",  desc: "Passivhus-standard" },
+  { label: "A2015", kwh: "< 30 kWh/m²",  desc: "Lavenergi 2015" },
+  { label: "A2010", kwh: "< 53 kWh/m²",  desc: "Lavenergi 2010" },
+  { label: "A",     kwh: "< 70 kWh/m²",  desc: "Meget energieffektiv" },
+  { label: "B",     kwh: "< 110 kWh/m²", desc: "God energieffektivitet" },
+  { label: "C",     kwh: "< 150 kWh/m²", desc: "Middel" },
+  { label: "D",     kwh: "< 190 kWh/m²", desc: "Under middel" },
+  { label: "E",     kwh: "< 240 kWh/m²", desc: "Dårlig" },
+  { label: "F",     kwh: "< 290 kWh/m²", desc: "Meget dårlig" },
+  { label: "G",     kwh: "≥ 290 kWh/m²", desc: "Laveste klasse" },
+];
+
+function EnergyInfoModal({ current, onClose }: { current: string | null; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end sm:items-center sm:justify-center sm:p-6">
+      <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.5)" }} onClick={onClose} />
+      <div
+        className="relative w-full flex flex-col sm:rounded-2xl sm:max-w-sm sm:mx-auto"
+        style={{ background: "white", borderRadius: "20px 20px 0 0", maxHeight: "85vh", paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="flex justify-center pt-3 pb-1 flex-shrink-0 sm:hidden">
+          <div className="w-9 h-1 rounded-full" style={{ background: "#DCE5E1" }} />
+        </div>
+        <div className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0" style={{ borderColor: "#F0F5F3" }}>
+          <p className="font-semibold text-[#0E1512] text-[15px]">Energimærkning</p>
+          <button
+            onClick={onClose}
+            className="w-7 h-7 rounded-full flex items-center justify-center"
+            style={{ background: "#F0F5F3", color: "#6B7A74" }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div className="overflow-y-auto flex-1 px-4 py-3 flex flex-col gap-1.5">
+          <p className="text-[12px] text-[#9AA7A1] mb-2 leading-relaxed">
+            Mærket angiver boligens årlige energiforbrug pr. m². Jo lavere forbrug, jo bedre mærke.
+          </p>
+          {ENERGY_LABELS.map(({ label, kwh, desc }) => {
+            const colors = ENERGY_COLOR[label];
+            const isActive = label === current;
+            return (
+              <div
+                key={label}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+                style={{
+                  background: isActive ? (colors?.bg ?? "#F0F5F3") : "#FAFCFB",
+                  border: isActive ? `1.5px solid ${colors?.text ?? "#DCE5E1"}33` : "1.5px solid transparent",
+                }}
+              >
+                <span
+                  className="w-9 text-center text-[12px] font-bold rounded-lg py-1 flex-shrink-0"
+                  style={{ background: colors?.bg ?? "#F0F5F3", color: colors?.text ?? "#0E1512" }}
+                >
+                  {label}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-medium text-[#0E1512] leading-none">{desc}</p>
+                  <p className="text-[11px] text-[#9AA7A1] mt-0.5">{kwh}/år</p>
+                </div>
+                {isActive && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0F4F3C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -324,6 +416,7 @@ export default function ListingCard({ listing, tab, index }: Props) {
   const [acting, setActing] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
   const [priceHistoryOpen, setPriceHistoryOpen] = useState(false);
+  const [energyInfoOpen, setEnergyInfoOpen] = useState(false);
   const isNew = useIsNew(listing.created_at);
 
   const hasPriceDrop = listing.previous_price != null && listing.price != null && listing.price < listing.previous_price;
@@ -473,6 +566,13 @@ export default function ListingCard({ listing, tab, index }: Props) {
         />
       )}
 
+      {energyInfoOpen && (
+        <EnergyInfoModal
+          current={listing.energy_class}
+          onClose={() => setEnergyInfoOpen(false)}
+        />
+      )}
+
       {/* Content */}
       <div className="px-4 pt-4 pb-4 flex flex-col gap-3">
 
@@ -557,7 +657,7 @@ export default function ListingCard({ listing, tab, index }: Props) {
             {listing.sqm && <StatCell label="Størrelse" value={`${listing.sqm} m²`} />}
             {listing.rooms && <StatCell label="Rum" value={`${listing.rooms}`} />}
             {listing.build_year && <StatCell label="Opført" value={`${listing.build_year}`} />}
-            {listing.energy_class && <StatCell label="Energi" value={listing.energy_class} accent={energyAccent} />}
+            {listing.energy_class && <StatCell label="Energi" value={listing.energy_class} accent={energyAccent} onClick={() => setEnergyInfoOpen(true)} />}
           </div>
         )}
 
