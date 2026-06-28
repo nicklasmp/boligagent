@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { getListings, getCounts } from "@/lib/listings";
+import { logEvent } from "@/lib/track";
 import ListingCard from "@/components/ListingCard";
 import TabNav from "@/components/TabNav";
 import FeedShell from "@/components/FeedShell";
@@ -14,6 +15,7 @@ export default async function NejTakPage() {
   const [listings, counts] = await Promise.all([
     getListings(userId, "disliked"),
     getCounts(userId),
+    logEvent(userId, "page_view", { tab: "disliked" }),
   ]);
 
   return (

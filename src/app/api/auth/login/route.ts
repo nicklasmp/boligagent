@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loginWithPin, SESSION_COOKIE, SESSION_DAYS } from "@/lib/auth";
+import { logEvent } from "@/lib/track";
 
 export async function POST(req: NextRequest) {
   const { name, pin } = await req.json();
@@ -14,6 +15,8 @@ export async function POST(req: NextRequest) {
     await new Promise((r) => setTimeout(r, 500));
     return NextResponse.json({ error: "Forkert PIN" }, { status: 401 });
   }
+
+  logEvent(result.userId, "session_start", { name }).catch(() => {});
 
   const res = NextResponse.json({ ok: true });
   res.cookies.set(SESSION_COOKIE, result.token, {
