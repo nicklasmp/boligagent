@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { cache } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
@@ -17,6 +18,17 @@ function generateToken(): string {
   const arr = new Uint8Array(32);
   crypto.getRandomValues(arr);
   return Array.from(arr, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Single query: session + user joined — avoids a second round-trip
+async function resolveToken(token: string): Promise<{ id: string; name: string } | null> {
+  const { data } = await getSupabase()
+    .from("sessions")
+    .select("expires_at, users!inner(id, name)")
+    .eq("token", token)
+    .single();
+  if (!data || new Date(data.expires_at) < new Date()) return null;
+  return data.users as unknown as { id: string; name: string };
 }
 
 export async function loginWithPin(
@@ -49,33 +61,15 @@ export async function loginWithPin(
 }
 
 export async function getSessionUser(): Promise<string | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
-  if (!token) return null;
-
-  const { data: session } = await getSupabase()
-    .from("sessions")
-    .select("user_id, expires_at")
-    .eq("token", token)
-    .single();
-
-  if (!session) return null;
-  if (new Date(session.expires_at) < new Date()) return null;
-
-  return session.user_id;
+  const user = await getSessionUserWithName();
+  return user?.id ?? null;
 }
 
 export async function getSessionUserWithName(): Promise<{ id: string; name: string } | null> {
-  const userId = await getSessionUser();
-  if (!userId) return null;
-
-  const { data: user } = await getSupabase()
-    .from("users")
-    .select("id, name")
-    .eq("id", userId)
-    .single();
-
-  return user ?? null;
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  if (!token) return null;
+  return resolveToken(token);
 }
 
 export async function logout(): Promise<void> {
@@ -86,46 +80,31 @@ export async function logout(): Promise<void> {
   }
 }
 
-export async function getSessionMeta(): Promise<{
+// cache() deduplicates calls within the same server-render pass
+export const getSessionMeta = cache(async (): Promise<{
   id: string;
   name: string;
   isAdmin: boolean;
   isImpersonating: boolean;
-} | null> {
+} | null> => {
   const cookieStore = await cookies();
   const activeToken = cookieStore.get(SESSION_COOKIE)?.value;
   const realToken = cookieStore.get(REAL_SESSION_COOKIE)?.value;
 
   if (!activeToken) return null;
 
-  const supabase = getSupabase();
+  // Resolve both tokens in parallel — each is now a single joined query
+  const [activeUser, realUser] = await Promise.all([
+    resolveToken(activeToken),
+    realToken ? resolveToken(realToken) : Promise.resolve(null),
+  ]);
 
-  async function resolveUser(token: string) {
-    const { data: session } = await supabase
-      .from("sessions")
-      .select("user_id, expires_at")
-      .eq("token", token)
-      .single();
-    if (!session || new Date(session.expires_at) < new Date()) return null;
-    const { data: user } = await supabase
-      .from("users")
-      .select("id, name")
-      .eq("id", session.user_id)
-      .single();
-    return user ?? null;
-  }
-
-  const activeUser = await resolveUser(activeToken);
   if (!activeUser) return null;
 
-  if (realToken) {
-    const realUser = await resolveUser(realToken);
-    const isAdmin = realUser?.name.toLowerCase() === "nicklas";
-    return { id: activeUser.id, name: activeUser.name, isAdmin, isImpersonating: true };
-  }
+  const isImpersonating = !!realToken && !!realUser;
+  const isAdmin = (isImpersonating ? realUser! : activeUser).name.toLowerCase() === "nicklas";
 
-  const isAdmin = activeUser.name.toLowerCase() === "nicklas";
-  return { id: activeUser.id, name: activeUser.name, isAdmin, isImpersonating: false };
-}
+  return { id: activeUser.id, name: activeUser.name, isAdmin, isImpersonating };
+});
 
 export { SESSION_DAYS };

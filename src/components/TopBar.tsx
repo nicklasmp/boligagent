@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 
 function PushButton() {
   return null;
@@ -12,39 +11,23 @@ interface UserMeta {
   name: string;
   isAdmin: boolean;
   isImpersonating: boolean;
-}
-
-interface UserEntry {
-  id: string;
-  name: string;
+  users: { id: string; name: string }[];
 }
 
 function UserMenu() {
-  const router = useRouter();
   const [meta, setMeta] = useState<UserMeta | null>(null);
-  const [users, setUsers] = useState<UserEntry[]>([]);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.ok ? r.json() : null)
-      .then((m) => {
-        if (!m) return;
-        setMeta(m);
-        if (m.isAdmin) {
-          fetch("/api/auth/users")
-            .then((r) => r.ok ? r.json() : [])
-            .then(setUsers)
-            .catch(() => {});
-        }
-      })
+      .then((m) => { if (m) setMeta(m); })
       .catch(() => {});
   }, []);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
-    router.refresh();
+    window.location.href = "/login";
   }
 
   async function impersonate(userId: string) {
@@ -54,8 +37,7 @@ function UserMenu() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId }),
     });
-    router.refresh();
-    window.location.reload();
+    window.location.href = "/";
   }
 
   async function revert() {
@@ -65,13 +47,12 @@ function UserMenu() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ revert: true }),
     });
-    router.refresh();
-    window.location.reload();
+    window.location.href = "/";
   }
 
   if (!meta) return null;
 
-  const otherUsers = users.filter((u) => u.id !== meta.id);
+  const otherUsers = (meta.users ?? []).filter((u) => u.id !== meta.id);
 
   return (
     <div className="relative flex items-center gap-2">
