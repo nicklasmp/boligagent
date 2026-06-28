@@ -143,7 +143,7 @@ function mapCase(c: BoligsidenCase): Listing {
 export async function fetchListings(zip = ZIP): Promise<Listing[]> {
   const url =
     `https://api.boligsiden.dk/search/cases` +
-    `?zipCodes=${encodeURIComponent(zip)}&per_page=200&page=1`;
+    `?zipCodes=${encodeURIComponent(zip)}&per_page=500&page=1&addressTypes=terraced%20house`;
 
   const res = await fetch(url, {
     headers: {
@@ -165,7 +165,6 @@ export async function fetchListings(zip = ZIP): Promise<Listing[]> {
   }
 
   const all = data.cases ?? [];
-  const types = [...new Set(all.map((c) => c.addressType))];
   if (all.length === 0) {
     throw new Error(`Boligsiden returned 0 cases. totalHits=${data.totalHits}. Body preview: ${text.slice(0, 300)}`);
   }

@@ -5,7 +5,7 @@ export const maxDuration = 60;
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { fetchListings } from "@/lib/boliga";
-import { sendToAll } from "@/lib/push";
+// import { sendToAll } from "@/lib/push"; // Push deaktiveret — API afviser requests fra Vercel
 
 export async function POST() {
   const supabase = createClient(
@@ -31,15 +31,7 @@ export async function POST() {
 
     if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 });
 
-    await Promise.allSettled(
-      newListings.map((l) =>
-        sendToAll({
-          title: "Nyt rækkehus i 5800",
-          body: `${l.address} – ${l.price?.toLocaleString("da-DK")} kr.`,
-          url: l.url,
-        })
-      )
-    );
+    // Push deaktiveret — API afviser requests fra Vercel
   }
 
   return NextResponse.json({ checked: listings.length, new: newListings.length });

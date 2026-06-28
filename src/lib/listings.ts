@@ -40,7 +40,8 @@ export async function getListings(userId: string, status: ListingStatus): Promis
       .from("listings")
       .select("boliga_id,address,zip,city,price,sqm,lot_size,rooms,build_year,energy_class,days_on_market,sqm_price,neighborhood,lat,lon,url,image_url,image_urls,created_at")
       .order("days_on_market", { ascending: true, nullsFirst: false })
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .limit(200),
     supabase
       .from("listing_interactions")
       .select("listing_id, status, note")
@@ -80,7 +81,7 @@ export async function getCounts(userId: string): Promise<Record<ListingStatus, n
 
   const liked = (interactions ?? []).filter((i) => i.status === "liked").length;
   const disliked = (interactions ?? []).filter((i) => i.status === "disliked").length;
-  const newCount = (total ?? 0) - liked - disliked;
+  const newCount = Math.max(0, (total ?? 0) - liked - disliked);
 
   return { new: newCount, liked, disliked };
 }
