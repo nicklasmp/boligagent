@@ -2,7 +2,7 @@ export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionMeta } from "@/lib/auth";
 import { logEvent } from "@/lib/track";
 
 const supabase = createClient(
@@ -14,8 +14,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await getSessionUser();
-  if (!userId) return NextResponse.json({ error: "Ikke logget ind" }, { status: 401 });
+  const sessionMeta = await getSessionMeta();
+  if (!sessionMeta) return NextResponse.json({ error: "Ikke logget ind" }, { status: 401 });
+  const { id: userId, isImpersonating } = sessionMeta;
 
   const { id } = await params;
   const boligaId = Number(id);
@@ -38,7 +39,7 @@ export async function PATCH(
       .eq("user_id", userId)
       .eq("listing_id", boligaId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    logEvent(userId, "listing_reset", { listing_id: boligaId }).catch(() => {});
+    if (!isImpersonating) logEvent(userId, "listing_reset", { listing_id: boligaId }).catch(() => {});
     return NextResponse.json({ ok: true });
   }
 
@@ -57,9 +58,11 @@ export async function PATCH(
   ]);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  logEvent(userId, status === "liked" ? "listing_liked" : "listing_disliked", {
-    listing_id: boligaId,
-    address: listing?.address ?? null,
-  }).catch(() => {});
+  if (!isImpersonating) {
+    logEvent(userId, status === "liked" ? "listing_liked" : "listing_disliked", {
+      listing_id: boligaId,
+      address: listing?.address ?? null,
+    }).catch(() => {});
+  }
   return NextResponse.json({ ok: true });
 }
